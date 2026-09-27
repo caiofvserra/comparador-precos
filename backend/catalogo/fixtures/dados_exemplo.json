@@ -1,0 +1,516 @@
+[
+  {
+    "model": "catalogo.supermercado",
+    "pk": 1,
+    "fields": {
+      "nome": "Mercado A",
+      "endereco": "Av. Independência, 1000",
+      "complemento": "",
+      "cidade": "Ribeirão Preto",
+      "estado": "SP",
+      "site_url": "https://www.mercadoa.com.br",
+      "ativo": true
+    }
+  },
+  {
+    "model": "catalogo.supermercado",
+    "pk": 2,
+    "fields": {
+      "nome": "Mercado B",
+      "endereco": "Rua Amador Bueno, 250",
+      "complemento": "Loja 2",
+      "cidade": "Ribeirão Preto",
+      "estado": "SP",
+      "site_url": "https://www.mercadob.com.br",
+      "ativo": true
+    }
+  },
+  {
+    "model": "catalogo.supermercado",
+    "pk": 3,
+    "fields": {
+      "nome": "Mercado C",
+      "endereco": "Av. Presidente Vargas, 3200",
+      "complemento": "",
+      "cidade": "Ribeirão Preto",
+      "estado": "SP",
+      "site_url": "https://www.mercadoc.com.br",
+      "ativo": true
+    }
+  },
+  {
+    "model": "catalogo.categoria",
+    "pk": 1,
+    "fields": {
+      "nome": "Grãos"
+    }
+  },
+  {
+    "model": "catalogo.categoria",
+    "pk": 2,
+    "fields": {
+      "nome": "Bebidas"
+    }
+  },
+  {
+    "model": "catalogo.categoria",
+    "pk": 3,
+    "fields": {
+      "nome": "Limpeza"
+    }
+  },
+  {
+    "model": "catalogo.categoria",
+    "pk": 4,
+    "fields": {
+      "nome": "Laticínios"
+    }
+  },
+  {
+    "model": "catalogo.produto",
+    "pk": 101,
+    "fields": {
+      "nome": "Arroz 5 kg",
+      "marca": "Marca A",
+      "codigo_barras": "7890000000101",
+      "categorias": [
+        1
+      ]
+    }
+  },
+  {
+    "model": "catalogo.produto",
+    "pk": 102,
+    "fields": {
+      "nome": "Feijão carioca 1 kg",
+      "marca": "Marca B",
+      "codigo_barras": "7890000000102",
+      "categorias": [
+        1
+      ]
+    }
+  },
+  {
+    "model": "catalogo.produto",
+    "pk": 103,
+    "fields": {
+      "nome": "Café torrado e moído 500 g",
+      "marca": "Marca C",
+      "codigo_barras": "7890000000103",
+      "categorias": [
+        2
+      ]
+    }
+  },
+  {
+    "model": "catalogo.produto",
+    "pk": 104,
+    "fields": {
+      "nome": "Leite integral 1 L",
+      "marca": "Marca D",
+      "codigo_barras": null,
+      "categorias": [
+        4
+      ]
+    }
+  },
+  {
+    "model": "catalogo.produto",
+    "pk": 105,
+    "fields": {
+      "nome": "Detergente líquido 500 ml",
+      "marca": "Marca E",
+      "codigo_barras": "7890000000105",
+      "categorias": [
+        3
+      ]
+    }
+  },
+  {
+    "model": "catalogo.produto",
+    "pk": 205,
+    "fields": {
+      "nome": "Açúcar refinado 1 kg",
+      "marca": "Marca F",
+      "codigo_barras": "7890000000205",
+      "categorias": [
+        1
+      ]
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 1,
+    "fields": {
+      "produto": 101,
+      "supermercado": 1,
+      "codigo_externo": "100101",
+      "nome_externo": "Arroz Marca A Tipo 1 5kg",
+      "url_fonte": "https://www.mercadoa.com.br/produto/100101",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 1,
+    "fields": {
+      "oferta_fonte": 1,
+      "valor": "25.90",
+      "data_hora_coleta": "2026-09-10T09:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 2,
+    "fields": {
+      "oferta_fonte": 1,
+      "valor": "24.90",
+      "data_hora_coleta": "2026-09-22T18:20:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 2,
+    "fields": {
+      "produto": 101,
+      "supermercado": 2,
+      "codigo_externo": "200101",
+      "nome_externo": "ARROZ MARCA A 5KG",
+      "url_fonte": "https://www.mercadob.com.br/p/200101",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 3,
+    "fields": {
+      "oferta_fonte": 2,
+      "valor": "26.50",
+      "data_hora_coleta": "2026-09-10T10:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 4,
+    "fields": {
+      "oferta_fonte": 2,
+      "valor": "24.90",
+      "data_hora_coleta": "2026-09-22T18:30:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 3,
+    "fields": {
+      "produto": 101,
+      "supermercado": 3,
+      "codigo_externo": "300101",
+      "nome_externo": "Arroz A 5 kg",
+      "url_fonte": "https://www.mercadoc.com.br/item/300101",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 5,
+    "fields": {
+      "oferta_fonte": 3,
+      "valor": "24.00",
+      "data_hora_coleta": "2026-09-05T08:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 6,
+    "fields": {
+      "oferta_fonte": 3,
+      "valor": "23.90",
+      "data_hora_coleta": "2026-09-15T08:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 7,
+    "fields": {
+      "oferta_fonte": 3,
+      "valor": "23.50",
+      "data_hora_coleta": "2026-09-22T19:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 4,
+    "fields": {
+      "produto": 102,
+      "supermercado": 1,
+      "codigo_externo": "100102",
+      "nome_externo": "Feijão Carioca Marca B 1kg",
+      "url_fonte": "https://www.mercadoa.com.br/produto/100102",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 8,
+    "fields": {
+      "oferta_fonte": 4,
+      "valor": "8.49",
+      "data_hora_coleta": "2026-09-10T09:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 9,
+    "fields": {
+      "oferta_fonte": 4,
+      "valor": "8.99",
+      "data_hora_coleta": "2026-09-22T18:20:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 5,
+    "fields": {
+      "produto": 102,
+      "supermercado": 2,
+      "codigo_externo": "200102",
+      "nome_externo": "FEIJAO CARIOCA MARCA B 1KG",
+      "url_fonte": "https://www.mercadob.com.br/p/200102",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 10,
+    "fields": {
+      "oferta_fonte": 5,
+      "valor": "8.79",
+      "data_hora_coleta": "2026-09-22T18:30:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 6,
+    "fields": {
+      "produto": 102,
+      "supermercado": 3,
+      "codigo_externo": "300102",
+      "nome_externo": "Feijão B carioca 1 kg",
+      "url_fonte": "https://www.mercadoc.com.br/item/300102",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 11,
+    "fields": {
+      "oferta_fonte": 6,
+      "valor": "9.20",
+      "data_hora_coleta": "2026-09-15T08:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 12,
+    "fields": {
+      "oferta_fonte": 6,
+      "valor": "8.60",
+      "data_hora_coleta": "2026-09-22T19:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 7,
+    "fields": {
+      "produto": 103,
+      "supermercado": 1,
+      "codigo_externo": "100103",
+      "nome_externo": "Café Marca C 500g",
+      "url_fonte": "https://www.mercadoa.com.br/produto/100103",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 13,
+    "fields": {
+      "oferta_fonte": 7,
+      "valor": "18.90",
+      "data_hora_coleta": "2026-09-10T09:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 14,
+    "fields": {
+      "oferta_fonte": 7,
+      "valor": "19.90",
+      "data_hora_coleta": "2026-09-22T18:20:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 8,
+    "fields": {
+      "produto": 103,
+      "supermercado": 2,
+      "codigo_externo": "200103",
+      "nome_externo": "CAFE MARCA C TORRADO 500G",
+      "url_fonte": "https://www.mercadob.com.br/p/200103",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 15,
+    "fields": {
+      "oferta_fonte": 8,
+      "valor": "18.50",
+      "data_hora_coleta": "2026-09-22T18:30:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 9,
+    "fields": {
+      "produto": 104,
+      "supermercado": 1,
+      "codigo_externo": "100104",
+      "nome_externo": "Leite Integral Marca D 1L",
+      "url_fonte": "https://www.mercadoa.com.br/produto/100104",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 16,
+    "fields": {
+      "oferta_fonte": 9,
+      "valor": "4.99",
+      "data_hora_coleta": "2026-09-22T18:20:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 10,
+    "fields": {
+      "produto": 104,
+      "supermercado": 3,
+      "codigo_externo": "300104",
+      "nome_externo": "Leite D integral 1 litro",
+      "url_fonte": "https://www.mercadoc.com.br/item/300104",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 17,
+    "fields": {
+      "oferta_fonte": 10,
+      "valor": "5.29",
+      "data_hora_coleta": "2026-09-15T08:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 18,
+    "fields": {
+      "oferta_fonte": 10,
+      "valor": "4.89",
+      "data_hora_coleta": "2026-09-22T19:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 11,
+    "fields": {
+      "produto": 105,
+      "supermercado": 1,
+      "codigo_externo": "100105",
+      "nome_externo": "Detergente Marca E 500ml",
+      "url_fonte": "https://www.mercadoa.com.br/produto/100105",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 19,
+    "fields": {
+      "oferta_fonte": 11,
+      "valor": "2.49",
+      "data_hora_coleta": "2026-09-22T18:20:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 12,
+    "fields": {
+      "produto": 105,
+      "supermercado": 2,
+      "codigo_externo": "200105",
+      "nome_externo": "DETERGENTE MARCA E 500ML",
+      "url_fonte": "https://www.mercadob.com.br/p/200105",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 20,
+    "fields": {
+      "oferta_fonte": 12,
+      "valor": "2.39",
+      "data_hora_coleta": "2026-09-22T18:30:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 13,
+    "fields": {
+      "produto": 105,
+      "supermercado": 3,
+      "codigo_externo": "300105",
+      "nome_externo": "Detergente E 500 ml",
+      "url_fonte": "https://www.mercadoc.com.br/item/300105",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 21,
+    "fields": {
+      "oferta_fonte": 13,
+      "valor": "2.59",
+      "data_hora_coleta": "2026-09-22T19:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.ofertafonte",
+    "pk": 14,
+    "fields": {
+      "produto": 205,
+      "supermercado": 1,
+      "codigo_externo": "100205",
+      "nome_externo": "Açúcar Refinado Marca F 1kg",
+      "url_fonte": "https://www.mercadoa.com.br/produto/100205",
+      "ativo": true
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 22,
+    "fields": {
+      "oferta_fonte": 14,
+      "valor": "17.50",
+      "data_hora_coleta": "2026-09-10T09:00:00-03:00"
+    }
+  },
+  {
+    "model": "precos.preco",
+    "pk": 23,
+    "fields": {
+      "oferta_fonte": 14,
+      "valor": "17.90",
+      "data_hora_coleta": "2026-09-22T18:20:00-03:00"
+    }
+  }
+]
