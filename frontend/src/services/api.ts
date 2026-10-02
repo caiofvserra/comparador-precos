@@ -48,7 +48,7 @@ const supermarkets: Supermarket[] = [
 ]
 
 const products: Product[] = [
-  { id: 101, nome: 'Arroz tipo 1 5 kg', marca: 'Camil', categorias: ['Alimentos', 'Mercearia'] },
+  { id: 101, nome: 'Arroz integral 5 kg', marca: 'Camil', categorias: ['Alimentos', 'Mercearia'] },
   {
     id: 205,
     nome: 'Azeite extravirgem 500 ml',
@@ -67,7 +67,7 @@ const products: Product[] = [
     marca: 'Piracanjuba',
     categorias: ['Bebidas', 'Laticínios'],
   },
-  { id: 518, nome: 'Pão francês 1 kg', marca: null, categorias: ['Alimentos', 'Padaria'] },
+  { id: 518, nome: 'Pão italiano 1 kg', marca: null, categorias: ['Alimentos', 'Padaria'] },
   {
     id: 623,
     nome: 'Banana nanica 1 kg',
@@ -92,6 +92,14 @@ const sourceUrls = [
 ]
 
 const collectedAt = '2026-10-02T10:30:00-03:00'
+const demoHistoryDates = [
+  '2026-07-10T10:30:00-03:00',
+  '2026-08-07T10:30:00-03:00',
+  '2026-08-28T10:30:00-03:00',
+  '2026-09-18T10:30:00-03:00',
+  collectedAt,
+]
+const demoHistoryPriceOffsetsInCents = [-60, -25, 35, -15, 0]
 
 const createComparison = (product: Product, values: (string | null)[]): Comparison => ({
   produto: product,
@@ -179,27 +187,22 @@ export async function getProductHistory(
 
   const comparison = comparisons[productId]
   if (!comparison) throw new Error('Produto sem histórico disponível.')
+  const availableValues = comparison.precos
+    .map((price) => (price.valor === null ? null : Math.round(Number(price.valor) * 100)))
+    .filter((value): value is number => value !== null)
+  const referenceValue =
+    availableValues.reduce((total, value) => total + value, 0) / availableValues.length
   const historico = comparison.precos
-    .filter(
-      (price) => price.disponivel && (!supermarketId || price.supermercado.id === supermarketId),
-    )
+    .filter((price) => !supermarketId || price.supermercado.id === supermarketId)
     .flatMap((price) => {
-      const currentValue = Number(price.valor)
-      const previousValue = (currentValue - 0.6).toFixed(2)
-      return [
-        {
-          supermercado: price.supermercado,
-          valor: previousValue,
-          data_hora_coleta: '2026-09-25T10:30:00-03:00',
-          url_fonte: price.url_fonte!,
-        },
-        {
-          supermercado: price.supermercado,
-          valor: price.valor!,
-          data_hora_coleta: price.data_hora_coleta!,
-          url_fonte: price.url_fonte!,
-        },
-      ]
+      const currentValue =
+        price.valor === null ? Math.round(referenceValue) : Math.round(Number(price.valor) * 100)
+      return demoHistoryDates.map((data_hora_coleta, index) => ({
+        supermercado: price.supermercado,
+        valor: ((currentValue + demoHistoryPriceOffsetsInCents[index]!) / 100).toFixed(2),
+        data_hora_coleta,
+        url_fonte: price.url_fonte ?? sourceUrls[price.supermercado.id - 1]!,
+      }))
     })
     .sort((first, second) => first.data_hora_coleta.localeCompare(second.data_hora_coleta))
   return { produto: comparison.produto, historico }

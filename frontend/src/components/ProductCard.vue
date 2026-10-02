@@ -73,13 +73,15 @@ const imageFailed = ref(false)
   width: 100%;
   height: 132px;
   padding: 8px;
+  overflow: hidden;
   border: 0;
   background: #fff;
 }
 .product-card-image img {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 .product-image-fallback {
   display: flex;
