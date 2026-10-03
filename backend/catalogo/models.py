@@ -33,6 +33,7 @@ class Produto(models.Model):
     nome = models.CharField(max_length=200)
     marca = models.CharField(max_length=100, blank=True)
     codigo_barras = models.CharField(max_length=20, blank=True, null=True)
+    imagem_url = models.URLField(blank=True, null=True)
     categorias = models.ManyToManyField(Categoria, blank=True)
 
     class Meta:
