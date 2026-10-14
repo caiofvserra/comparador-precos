@@ -37,13 +37,17 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR("A quantidade deve estar entre 1 e 50."))
             return
 
-        supermercado = Supermercado.objects.filter(
-            nome__iexact="Savegnago", ativo=True
-        ).first()
-
-        if supermercado is None:
-            self.stderr.write(self.style.ERROR("Savegnago não está cadastrado como ativo."))
-            return
+        supermercado, _ = Supermercado.objects.get_or_create(
+            nome="Savegnago",
+            defaults={
+                "endereco": "",
+                "complemento": "",
+                "cidade": "Ribeirão Preto",
+                "estado": "SP",
+                "site_url": "https://www.savegnago.com.br",
+                "ativo": True,
+            },
+        )
 
         self.stdout.write(f"Consultando Savegnago para o CEP {cep}...")
 
