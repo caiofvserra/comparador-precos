@@ -5,3 +5,7 @@ node_modules/
 __pycache__/
 *.pyc
 .venv/
+
+# Backups de banco de dados
+*.backup
+*.dump
