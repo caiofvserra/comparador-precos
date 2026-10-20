@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 330">
+<rect width="300" height="330" rx="24" fill="#f7fafc"/>
+<ellipse cx="150" cy="285" rx="92" ry="12" fill="#dfe7ed"/>
+<path d="M122 108q-36-49-71-10q-34 38 3 99q31 54 69 18q40 38 70-17q37-65 0-100q-35-38-71 10" fill="#e7c94b" stroke="#c9a72f" stroke-width="3"/><path d="M122 107q0-36 31-49" fill="none" stroke="#3b7a42" stroke-width="10" stroke-linecap="round"/>
+<text x="150" y="170" font-family="Arial,sans-serif" font-size="18" font-weight="700" text-anchor="middle" fill="#17324d">BANANA</text>
+<text x="150" y="195" font-family="Arial,sans-serif" font-size="13" font-weight="600" text-anchor="middle" fill="#52687b">1 kg</text>
+<text x="150" y="315" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#8a9aaa">ILUSTRAÇÃO DO PRODUTO</text>
+</svg>

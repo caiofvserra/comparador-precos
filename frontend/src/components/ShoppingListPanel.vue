@@ -111,4 +111,15 @@ const emit = defineEmits<{
     margin-top: 9px;
   }
 }
+
+/* Visual refinement: shared design language. */
+
+.shopping-list-panel {
+  margin-top: 22px;
+  padding-top: 17px;
+  border-top-color: #e2e9f1;
+}
+.panel-open-list { color: #087c59; font-size: 10px; }
+.panel-add-products { border-radius: 7px; background: #087c59; font-size: 10px; }
+.panel-data-note { color: #8190a2; font-size: 9px; }
 </style>

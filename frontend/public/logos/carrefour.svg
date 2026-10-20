@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" role="img" aria-labelledby="title">
+  <title id="title">Carrefour</title>
+  <g transform="translate(8 9)">
+    <path d="M18 42 48 8 70 26 49 44 70 62 48 80Z" fill="#e51b36"/>
+    <path d="M88 8 118 42 88 80 65 62 86 44 65 26Z" fill="#0055a4"/>
+    <path d="M52 25 64 40 52 54 40 40Z" fill="#ffffff"/>
+    <path d="M78 25 90 40 78 54 66 40Z" fill="#ffffff"/>
+  </g>
+  <text x="140" y="65" fill="#0055a4" font-family="Georgia, 'Times New Roman', serif" font-size="48" font-weight="700" letter-spacing="-1.5">Carrefour</text>
+</svg>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { productFallbackImageUrl } from '../composables/useShoppingList'
 import type { ShoppingListEntry } from '../composables/useShoppingList'
 
 withDefaults(
@@ -17,9 +18,19 @@ const emit = defineEmits<{
   viewProduct: [productId: number]
 }>()
 const failedImages = ref<number[]>([])
+const fallbackImages = ref<Record<number, string>>({})
 
-function onImageError(productId: number) {
-  if (!failedImages.value.includes(productId)) failedImages.value.push(productId)
+function itemImageUrl(item: ShoppingListEntry) {
+  return fallbackImages.value[item.produto_id] || item.imageUrl
+}
+
+function onImageError(item: ShoppingListEntry) {
+  const fallback = productFallbackImageUrl(item.product)
+  if (itemImageUrl(item) !== fallback) {
+    fallbackImages.value[item.produto_id] = fallback
+    return
+  }
+  if (!failedImages.value.includes(item.produto_id)) failedImages.value.push(item.produto_id)
 }
 </script>
 
@@ -51,10 +62,10 @@ function onImageError(productId: number) {
           @click="emit('viewProduct', item.produto_id)"
         >
           <img
-            v-if="item.imageUrl && !failedImages.includes(item.produto_id)"
-            :src="item.imageUrl"
+            v-if="!failedImages.includes(item.produto_id)"
+            :src="itemImageUrl(item)"
             alt=""
-            @error="onImageError(item.produto_id)"
+            @error="onImageError(item)"
           />
           <span v-else aria-hidden="true">{{ item.product?.nome?.slice(0, 1) || '•' }}</span>
         </button>
@@ -397,6 +408,134 @@ function onImageError(productId: number) {
   }
   .shopping-quantity input {
     width: 26px;
+  }
+}
+
+/* Visual refinement: shared design language. */
+
+.shopping-items {
+  border-color: #e1e8f0;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgb(24 48 77 / 3%);
+}
+.shopping-items-heading {
+  min-height: 62px;
+  padding: 12px 17px;
+  border-bottom-color: #e7edf3;
+}
+.items-kicker {
+  color: #5b8877;
+  font-size: 10px;
+  letter-spacing: 0.9px;
+}
+.shopping-items-heading h2 {
+  color: #1f3551;
+  font-size: 16px;
+}
+.shopping-items-heading h2 span {
+  color: #7d8fa4;
+  font-size: 12px;
+}
+.shopping-items-rows {
+  padding: 0 17px;
+}
+.shopping-item-row {
+  min-height: 72px;
+  gap: 12px;
+  border-bottom-color: #edf1f5;
+}
+.shopping-item-photo {
+  width: 43px;
+  height: 50px;
+  border-radius: 7px;
+  background: #f6f9fc;
+}
+.shopping-item-name button {
+  color: #2d4563;
+  font-size: 12px;
+}
+.shopping-item-name small {
+  color: #7d8fa4;
+  font-size: 10px;
+}
+.shopping-quantity {
+  height: 33px;
+  border-color: #dfe7ef;
+  border-radius: 7px;
+}
+.shopping-quantity button {
+  width: 28px;
+  height: 31px;
+  color: #3d5a76;
+}
+.shopping-quantity input {
+  width: 32px;
+  height: 31px;
+  font-size: 11px;
+}
+.shopping-unit {
+  color: #7d8fa4;
+  font-size: 10px;
+}
+.shopping-remove {
+  border-radius: 6px;
+}
+.shopping-items-empty {
+  min-height: 195px;
+}
+.shopping-items-empty strong {
+  color: #2c4662;
+  font-size: 13px;
+}
+.shopping-items-empty p {
+  font-size: 11px;
+}
+.shopping-items-empty :deep(button) {
+  border-radius: 8px;
+  background: #087c59;
+  font-size: 11px;
+}
+.shopping-items.compact .shopping-items-heading {
+  min-height: 42px;
+  padding: 0 0 11px;
+}
+.shopping-items.compact .shopping-items-heading h2 {
+  font-size: 13px;
+}
+.shopping-items.compact .shopping-items-heading h2 span {
+  font-size: 10px;
+}
+.shopping-items.compact .shopping-item-row {
+  min-height: 58px;
+}
+.shopping-items.compact .shopping-item-name button {
+  font-size: 10px;
+}
+.shopping-items.compact .shopping-item-name small {
+  font-size: 9px;
+}
+.shopping-items.compact .shopping-items-empty strong {
+  font-size: 11px;
+}
+.shopping-items.compact .shopping-items-empty p {
+  font-size: 9px;
+}
+@media (max-width: 520px) {
+  .shopping-items-heading {
+    padding: 10px 12px;
+  }
+  .shopping-items-rows {
+    padding: 0 10px;
+  }
+  .shopping-item-row {
+    min-height: 62px;
+    gap: 6px;
+  }
+  .shopping-item-name button {
+    font-size: 10px;
+  }
+  .shopping-item-name small {
+    font-size: 9px;
   }
 }
 </style>

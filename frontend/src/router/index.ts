@@ -1,17 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { defineComponent, h } from 'vue'
 import AppLayout from '../layouts/AppLayout.vue'
-
-const HomeRoute = defineComponent({ render: () => h('span') })
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) return { el: to.hash, behavior: 'smooth' }
+    return { top: 0 }
+  },
   routes: [
     {
       path: '/',
       component: AppLayout,
       children: [
-        { path: '', name: 'home', component: () => import('../App.vue') },
+        { path: '', name: 'home', component: () => import('../views/HomeView.vue') },
+        { path: 'buscar', name: 'catalog', component: () => import('../App.vue') },
+        {
+          path: 'comparacao',
+          name: 'comparison',
+          component: () => import('../views/ComparisonView.vue'),
+        },
         {
           path: 'produto/:id',
           name: 'product',

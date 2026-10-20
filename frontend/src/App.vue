@@ -1,15 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import CatalogFilters from './components/CatalogFilters.vue'
 import ProductCard from './components/ProductCard.vue'
-import ShoppingListPanel from './components/ShoppingListPanel.vue'
 import {
   addToBasket,
-  calculateBasket as runSimulation,
-  changeBasketQuantity as changeQuantity,
   loadCatalog,
-  removeFromBasket,
   searchCatalog,
   useShoppingList,
 } from './composables/useShoppingList'
@@ -24,12 +20,8 @@ const maxPrice = ref('')
 const products = ref<Product[]>([])
 const router = useRouter()
 const {
-  basketProducts,
   knownProducts,
   lastViewedProductId,
-  simulation,
-  simulationError,
-  simulating,
 } = useShoppingList()
 const loadingProducts = ref(false)
 const productsError = ref('')
@@ -121,15 +113,7 @@ async function searchProducts(query = search.value) {
   }
 }
 
-async function openShoppingList() {
-  await router.push({ name: 'shopping-list' })
-}
 
-async function browseProducts() {
-  await router.push({ name: 'home' })
-  await nextTick()
-  document.getElementById('product-search')?.focus()
-}
 
 async function viewProductById(productId: number) {
   lastViewedProductId.value = productId
@@ -170,14 +154,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="mvp-app home-page">
-    <main class="mvp-main" id="inicio">
+  <div class="mvp-app catalog-page">
+    <main class="mvp-main" id="catalog-page">
       <section class="mvp-hero">
         <div class="mvp-hero-copy">
           <p class="mvp-eyebrow">PESQUISA DE PREÇOS ONLINE</p>
-          <h1>Pesquise produtos e compare preços de vários supermercados</h1>
+          <h1>Encontre produtos para sua lista de compras</h1>
           <p class="mvp-lede">
-            Encontre preços online em Ribeirão Preto, confira as fontes e simule sua lista.
+            Pesquise o catálogo, confira as informações dos produtos e adicione o que precisa à sua
+            lista.
           </p>
         </div>
         <div class="mvp-hero-search-area">
@@ -272,20 +257,6 @@ onMounted(async () => {
             :has-active-filters="hasCatalogFilters"
             @clear="clearFilters"
           />
-          <ShoppingListPanel
-            :items="basketProducts"
-            :products="knownProducts"
-            :simulation="simulation"
-            :item-count="basketProducts.length"
-            :loading="simulating"
-            :error="simulationError"
-            @update-quantity="changeQuantity"
-            @remove-item="removeFromBasket"
-            @view-product="viewProductById"
-            @calculate="runSimulation"
-            @open-list="openShoppingList"
-            @browse-products="browseProducts"
-          />
         </aside>
       </div>
     </main>
@@ -295,15 +266,17 @@ onMounted(async () => {
 <style>
 .mvp-hero {
   display: grid;
-  grid-template-columns: minmax(230px, 0.83fr) minmax(340px, 1.45fr) 160px;
+  grid-template-columns: minmax(250px, 0.9fr) minmax(360px, 1.4fr) 210px;
   align-items: center;
-  gap: 24px;
-  min-height: 180px;
-  margin: 15px -7.5% 0;
-  padding: 22px 7.5%;
+  gap: 28px;
+  min-height: 194px;
+  margin: 18px -28px 0;
+  padding: 22px 28px;
   overflow: hidden;
-  border-radius: 11px;
-  background: #e7f5ee;
+  border: 1px solid #e4f0e9;
+  border-radius: 14px;
+  background: linear-gradient(115deg, #e8f7f0 0%, #f3fbf7 58%, #e3f3eb 100%);
+  box-shadow: var(--mvp-shadow);
 }
 .mvp-hero-copy,
 .mvp-hero-search-area {
@@ -314,28 +287,29 @@ onMounted(async () => {
   margin-bottom: 8px;
 }
 .mvp-app .mvp-hero h1 {
-  max-width: 320px;
+  max-width: 360px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 25px;
-  font-weight: 700;
-  line-height: 1.12;
-  letter-spacing: 0;
+  font-size: clamp(25px, 2.2vw, 32px);
+  font-weight: 800;
+  line-height: 1.14;
+  letter-spacing: -0.7px;
 }
 .mvp-lede {
-  max-width: 330px;
-  margin-top: 9px;
-  font-size: 10px;
-  line-height: 1.5;
+  max-width: 360px;
+  margin-top: 11px;
+  color: #596f65;
+  font-size: 13px;
+  line-height: 1.6;
 }
 .mvp-search {
   display: flex;
   min-width: 0;
-  min-height: 54px;
+  min-height: 58px;
   align-items: center;
   gap: 12px;
-  padding: 6px 7px 6px 16px;
-  border: 1px solid #d9e1d9;
-  border-radius: 6px;
+  padding: 7px 8px 7px 16px;
+  border: 1px solid #d9e5de;
+  border-radius: 10px;
   background: #fff;
 }
 .mvp-search-icon {
@@ -363,20 +337,24 @@ onMounted(async () => {
   outline: 0;
   background: transparent;
   color: var(--mvp-ink);
-  font-size: 11px;
+  font-size: 13px;
 }
-.mvp-search input::placeholder { color: #9aa49c; }
+.mvp-search input::placeholder {
+  color: #94a399;
+}
 .mvp-search button {
-  min-height: 38px;
-  padding: 0 18px;
+  min-height: 42px;
+  padding: 0 21px;
   border: 0;
-  border-radius: 4px;
-  background: #128b51;
+  border-radius: 8px;
+  background: #087c59;
   color: #fff;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
 }
-.mvp-search button:hover { background: #117246; }
+.mvp-search button:hover {
+  background: #066848;
+}
 .mvp-hero .mvp-search {
   box-shadow: 0 2px 8px rgba(34, 54, 42, 0.04);
 }
@@ -384,18 +362,18 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
-  color: #718077;
-  font-size: 9px;
+  gap: 7px;
+  margin-top: 12px;
+  color: #637c70;
+  font-size: 11px;
 }
 .mvp-search-examples button {
-  padding: 5px 10px;
-  border: 1px solid #e1e9e3;
+  padding: 6px 11px;
+  border: 1px solid #dbe9e0;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.7);
-  color: #5f6e63;
-  font-size: 9px;
+  background: rgb(255 255 255 / 82%);
+  color: #496558;
+  font-size: 10px;
 }
 .mvp-search-examples button:hover {
   border-color: #a8c3ae;
@@ -421,25 +399,26 @@ onMounted(async () => {
   font-weight: 500;
 }
 .mvp-hero-image {
-  width: 160px;
-  height: 136px;
-  align-self: end;
+  width: 210px;
+  height: 142px;
+  align-self: center;
   object-fit: cover;
   object-position: center;
-  mix-blend-mode: multiply;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgb(29 63 50 / 13%);
 }
 .mvp-workspace {
   display: grid;
   grid-template-columns: 210px minmax(0, 1fr);
   gap: 28px;
-  padding-top: 24px;
+  padding-top: 30px;
 }
 .mvp-filter-panel {
   grid-column: 1;
   grid-row: 1;
   min-width: 0;
-  padding-right: 17px;
-  border-right: 1px solid #e2e8e2;
+  padding-right: 20px;
+  border-right: 1px solid #e0e8f0;
 }
 .mvp-catalog {
   grid-column: 2;
@@ -563,83 +542,83 @@ onMounted(async () => {
 .mvp-product-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 11px;
+  gap: 15px;
 }
 
 @media (max-width: 1180px) {
   .mvp-hero {
-    grid-template-columns: minmax(210px, 0.8fr) minmax(300px, 1.4fr) 125px;
-    gap: 15px;
-    margin-right: -5.3%;
-    margin-left: -5.3%;
-    padding-right: 5.3%;
-    padding-left: 5.3%;
+    grid-template-columns: minmax(220px, 0.85fr) minmax(300px, 1.25fr) 180px;
+    gap: 18px;
+    margin-right: -24px;
+    margin-left: -24px;
+    padding-right: 24px;
+    padding-left: 24px;
   }
   .mvp-hero-image {
-    width: 125px;
-    height: 120px;
+    width: 180px;
+    height: 145px;
   }
   .mvp-workspace {
-    grid-template-columns: 190px minmax(0, 1fr);
+    grid-template-columns: 180px minmax(0, 1fr);
     gap: 20px;
   }
   .mvp-product-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-@media (max-width: 760px) {
+@media (max-width: 850px) {
   .mvp-hero {
-    grid-template-columns: minmax(0, 1fr) 100px;
-    gap: 12px;
-    min-height: 174px;
-    margin: 12px -20px 0;
-    padding: 17px 20px;
+    grid-template-columns: minmax(0, 1fr) 116px;
+    gap: 14px;
+    min-height: 190px;
+    margin: 14px -24px 0;
+    padding: 20px 24px;
   }
   .mvp-app .mvp-hero h1 {
-    font-size: 20px;
+    font-size: 23px;
   }
   .mvp-lede {
-    max-width: 340px;
-    font-size: 9px;
+    max-width: 380px;
+    font-size: 11px;
   }
   .mvp-hero-image {
-    width: 100px;
-    height: 116px;
+    width: 116px;
+    height: 130px;
   }
   .mvp-hero-search-area {
     grid-column: 1 / -1;
   }
   .mvp-hero .mvp-search {
-    min-height: 45px;
+    min-height: 48px;
   }
   .mvp-hero .mvp-search button {
-    min-height: 34px;
-    padding: 0 14px;
-    font-size: 10px;
+    min-height: 36px;
+    padding: 0 15px;
+    font-size: 11px;
   }
   .mvp-search-examples {
-    gap: 5px;
-    margin-top: 7px;
+    gap: 6px;
+    margin-top: 9px;
   }
   .mvp-search-examples > span {
     width: 100%;
   }
   .mvp-search-examples button {
-    padding: 4px 8px;
-    font-size: 8px;
+    padding: 5px 9px;
+    font-size: 9px;
   }
   .mvp-hero .mvp-demo-note {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    max-width: 120px;
+    position: static;
+    max-width: none;
+    margin-top: 8px;
   }
   .mvp-hero .mvp-demo-note > span {
-    display: none;
+    display: grid;
+    flex: 0 0 auto;
   }
   .mvp-hero .mvp-demo-note strong {
-    text-align: right;
-    font-size: 7px;
+    text-align: left;
+    font-size: 9px;
   }
   .mvp-workspace {
     grid-template-columns: 1fr;
@@ -663,29 +642,29 @@ onMounted(async () => {
 }
 @media (max-width: 520px) {
   .mvp-hero {
-    grid-template-columns: 1fr 66px;
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) 74px;
+    gap: 9px;
     min-height: 0;
     margin: 10px -15px 0;
-    padding: 17px 15px 13px;
-    border-radius: 8px;
+    padding: 17px 15px 14px;
+    border-radius: 10px;
   }
   .mvp-app .mvp-hero h1 {
-    max-width: 260px;
-    font-size: 19px;
-    line-height: 1.15;
+    max-width: 300px;
+    font-size: 20px;
+    line-height: 1.17;
   }
   .mvp-hero .mvp-eyebrow {
     font-size: 7px;
   }
   .mvp-lede {
-    max-width: 245px;
+    max-width: 270px;
     margin-top: 6px;
-    font-size: 8px;
+    font-size: 9px;
   }
   .mvp-hero-image {
-    width: 66px;
-    height: 84px;
+    width: 74px;
+    height: 90px;
     align-self: center;
   }
   .mvp-hero-search-area {
@@ -694,34 +673,32 @@ onMounted(async () => {
   .mvp-hero .mvp-search {
     min-height: 42px;
     gap: 8px;
-    padding-left: 10px;
+    padding-left: 11px;
   }
   .mvp-search-icon {
     width: 13px;
     height: 13px;
   }
   .mvp-hero .mvp-search input {
-    font-size: 9px;
+    font-size: 10px;
   }
   .mvp-hero .mvp-search button {
-    min-height: 32px;
-    padding: 0 10px;
-    font-size: 9px;
+    min-height: 33px;
+    padding: 0 11px;
+    font-size: 10px;
   }
   .mvp-search-examples {
     gap: 4px;
     font-size: 8px;
   }
   .mvp-search-examples button {
-    padding: 4px 7px;
+    padding: 5px 8px;
   }
   .mvp-hero .mvp-demo-note {
-    top: 5px;
-    right: 5px;
-    max-width: 92px;
+    max-width: none;
   }
   .mvp-hero .mvp-demo-note strong {
-    font-size: 6px;
+    font-size: 8px;
   }
   .mvp-workspace {
     gap: 16px;
@@ -747,12 +724,157 @@ onMounted(async () => {
     gap: 8px;
   }
 }
+@media (max-width: 760px) {
+  .mvp-hero {
+    margin-right: -20px;
+    margin-left: -20px;
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .mvp-app *,
   .mvp-app *::before,
   .mvp-app *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Homepage polish: professional welcome and clear product journey. */
+.home-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 22px 0 0;
+}
+.home-benefit {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 17px 18px;
+  border: 1px solid var(--mvp-line);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--mvp-shadow);
+}
+.home-benefit-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--mvp-soft-green);
+  color: var(--mvp-green);
+  font-size: 22px;
+  font-weight: 800;
+}
+.home-benefit strong {
+  color: var(--mvp-navy);
+  font-size: 13px;
+}
+.home-benefit p {
+  margin: 5px 0 0;
+  color: var(--mvp-muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.home-how {
+  margin: 30px 0 0;
+  padding: 25px 26px 18px;
+  border: 1px solid var(--mvp-line);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fff 0%, #f8fbfd 100%);
+}
+.home-how-heading {
+  text-align: center;
+}
+.home-how-heading .mvp-eyebrow {
+  margin-bottom: 7px;
+}
+.home-how-heading h2 {
+  margin: 0;
+  color: var(--mvp-navy);
+  font-size: clamp(20px, 2vw, 26px);
+  letter-spacing: -0.45px;
+}
+.home-how-heading > p:last-child {
+  margin: 7px 0 0;
+  color: var(--mvp-muted);
+  font-size: 12px;
+}
+.home-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+  margin-top: 22px;
+}
+.home-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 13px;
+  border-radius: 10px;
+  background: #f2f7fa;
+}
+.home-step > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: #dff2e9;
+  color: var(--mvp-green);
+  font-size: 11px;
+  font-weight: 800;
+}
+.home-step strong {
+  color: var(--mvp-navy);
+  font-size: 12px;
+}
+.home-step p {
+  margin: 4px 0 0;
+  color: var(--mvp-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+.home-market-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 4vw, 42px);
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid var(--mvp-line);
+}
+.home-market-strip > span {
+  color: var(--mvp-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+.home-market-strip img {
+  width: auto;
+  max-width: 110px;
+  height: 29px;
+  object-fit: contain;
+}
+@media (max-width: 760px) {
+  .home-benefits,
+  .home-steps {
+    grid-template-columns: 1fr;
+  }
+  .home-how {
+    padding: 20px 16px 15px;
+  }
+  .home-market-strip {
+    gap: 18px;
+  }
+  .home-market-strip > span {
+    flex-basis: 100%;
+    text-align: center;
   }
 }
 </style>

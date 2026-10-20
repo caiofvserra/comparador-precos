@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 330">
+<rect width="300" height="330" rx="24" fill="#f7fafc"/>
+<ellipse cx="150" cy="285" rx="92" ry="12" fill="#dfe7ed"/>
+<path d="M94 44h32v18l13 18v190q0 17-17 17H98q-17 0-17-17V80l13-18z" fill="#73964e" stroke="#d5dce3" stroke-width="3"/><rect x="94" y="34" width="32" height="15" rx="4" fill="#29445c"/><rect x="85" y="130" width="50" height="72" rx="7" fill="#fff" opacity=".92"/>
+<text x="150" y="170" font-family="Arial,sans-serif" font-size="18" font-weight="700" text-anchor="middle" fill="#17324d">AZEITE</text>
+<text x="150" y="195" font-family="Arial,sans-serif" font-size="13" font-weight="600" text-anchor="middle" fill="#52687b">500 ml</text>
+<text x="150" y="315" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#8a9aaa">ILUSTRAÇÃO DO PRODUTO</text>
+</svg>

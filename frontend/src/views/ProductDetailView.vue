@@ -38,6 +38,7 @@ let productRequest = 0
 let historyRequest = 0
 
 const storeColors = ['#178b51', '#d48742', '#c95252', '#5988a4', '#8c75a8']
+const failedSupermarketLogos = ref<string[]>([])
 
 const productName = computed(() => product.value?.nome?.replace(/\s+/g, ' ').trim() || 'Produto')
 const productBrand = computed(() => product.value?.marca || 'Marca não informada')
@@ -51,6 +52,48 @@ const currentPrices = computed(() =>
     return Number(first.valor) - Number(second.valor)
   }),
 )
+const availablePrices = computed(() =>
+  currentPrices.value.filter(
+    (price) =>
+      price.disponivel &&
+      price.valor !== null &&
+      Number.isFinite(Number(price.valor)) &&
+      Number(price.valor) >= 0,
+  ),
+)
+
+const cheapestPrice = computed(() => {
+  if (!availablePrices.value.length) return null
+
+  return Math.min(
+    ...availablePrices.value.map((price) => Number(price.valor)),
+  )
+})
+
+function isCheapest(price: (typeof currentPrices.value)[number]) {
+  return (
+    price.disponivel &&
+    price.valor !== null &&
+    cheapestPrice.value !== null &&
+    Number(price.valor) === cheapestPrice.value
+  )
+}
+
+function priceDifference(price: (typeof currentPrices.value)[number]) {
+  if (!price.disponivel || price.valor === null || cheapestPrice.value === null) {
+    return null
+  }
+
+  const value = Number(price.valor)
+
+  return {
+    amount: value - cheapestPrice.value,
+    percentage:
+      cheapestPrice.value > 0
+        ? ((value - cheapestPrice.value) / cheapestPrice.value) * 100
+        : null,
+  }
+}
 const historyRecords = computed(() => {
   const records = history.value?.historico ?? []
   return [...records]
@@ -130,6 +173,27 @@ const historyChart = computed(() => {
   })
   return { series, dateTicks, priceTicks }
 })
+
+
+function supermarketLogoUrl(name: string) {
+  const normalized = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR')
+  const baseUrl = import.meta.env.BASE_URL
+  if (normalized.includes('atacadao')) return `${baseUrl}logos/atacadao.svg`
+  if (normalized.includes('savegnago')) return `${baseUrl}logos/savegnago.svg`
+  if (normalized.includes('carrefour')) return `${baseUrl}logos/carrefour.svg`
+  return ''
+}
+
+function supermarketLogoFailed(name: string) {
+  return failedSupermarketLogos.value.includes(name)
+}
+
+function handleSupermarketLogoError(name: string) {
+  if (!failedSupermarketLogos.value.includes(name)) failedSupermarketLogos.value.push(name)
+}
 
 function formatPrice(value: string | number) {
   return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -251,7 +315,7 @@ async function loadProduct() {
 }
 
 async function returnToResults() {
-  await router.push({ name: 'home' })
+  await router.push({ name: 'catalog', hash: '#product-search' })
 }
 
 watch(
@@ -308,36 +372,72 @@ onMounted(() => void loadProduct())
             <span>Por supermercado</span>
           </div>
           <p v-if="comparisonError" class="pd-inline-error" role="alert">{{ comparisonError }}</p>
-          <div v-else-if="currentPrices.length" class="pd-current-grid">
-            <article
-              v-for="(price, index) in currentPrices"
-              :key="price.supermercado.id"
-              class="pd-current-store"
-              :class="{ unavailable: !price.disponivel }"
-            >
-              <span
-                class="pd-store-dot"
-                :style="{ '--store-color': storeColors[index % storeColors.length] }"
-              ></span>
-              <div>
-                <strong>{{ price.supermercado.nome }}</strong
-                ><small v-if="price.disponivel && price.data_hora_coleta"
-                  >Atualizado {{ formatDate(price.data_hora_coleta) }}</small
-                ><small v-else>Sem preço disponível</small>
-              </div>
-              <strong class="pd-current-price">{{
-                price.disponivel ? formatPrice(price.valor!) : 'Indisponível'
-              }}</strong>
-              <a
-                v-if="price.disponivel && price.url_fonte"
-                :href="price.url_fonte"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Fonte ↗</a
-              >
-            </article>
-          </div>
-          <p v-else class="pd-muted">Não há preços recentes para exibir.</p>
+          
+<div v-else-if="currentPrices.length" class="pd-current-grid">
+  <article
+    v-for="price in currentPrices"
+    :key="price.supermercado.id"
+    class="pd-current-store"
+    :class="{
+      unavailable: !price.disponivel,
+      'pd-store-cheapest': isCheapest(price),
+    }"
+  >
+    <span class="pd-store-logo" :aria-label="`Logo ${price.supermercado.nome}`">
+      <img
+        v-if="supermarketLogoUrl(price.supermercado.nome) && !supermarketLogoFailed(price.supermercado.nome)"
+        :src="supermarketLogoUrl(price.supermercado.nome)"
+        :alt="`Logo ${price.supermercado.nome}`"
+        @error="handleSupermarketLogoError(price.supermercado.nome)"
+      />
+      <span v-else aria-hidden="true">{{ price.supermercado.nome.slice(0, 1) }}</span>
+    </span>
+
+    <div class="pd-store-details">
+      <strong>{{ price.supermercado.nome }}</strong>
+
+      <span v-if="isCheapest(price)" class="pd-cheapest-badge">
+        Menor preço
+      </span>
+
+      <small v-if="price.disponivel && price.data_hora_coleta">
+        Atualizado {{ formatDate(price.data_hora_coleta) }}
+      </small>
+      <small v-else>Sem preço disponível</small>
+    </div>
+
+    <div class="pd-price-details">
+      <strong class="pd-current-price">
+        {{ price.disponivel ? formatPrice(price.valor!) : 'Indisponível' }}
+      </strong>
+
+      <small
+        v-if="priceDifference(price) && !isCheapest(price)"
+        class="pd-price-difference"
+      >
+        + {{ formatPrice(priceDifference(price)!.amount) }}
+        <template v-if="priceDifference(price)!.percentage !== null">
+          ({{ priceDifference(price)!.percentage!.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }) }}%)
+        </template>
+      </small>
+
+      <small v-else-if="isCheapest(price)" class="pd-price-saving">
+        Melhor preço disponível
+      </small>
+    </div>
+
+    <a
+      v-if="price.disponivel && price.url_fonte"
+      :href="price.url_fonte"
+      target="_blank"
+      rel="noopener noreferrer"
+    >Fonte ↗</a>
+  </article>
+</div>
+
         </section>
 
         <section class="pd-filterbar" aria-label="Filtros do histórico">
@@ -420,7 +520,17 @@ onMounted(() => void loadProduct())
             </p>
             <ul v-if="historyChart" class="pd-legend">
               <li v-for="series in historyChart.series" :key="series.id">
-                <span :style="{ '--store-color': series.color }"></span>{{ series.name }}
+                <img
+                  v-if="supermarketLogoUrl(series.name) && !supermarketLogoFailed(series.name)"
+                  class="pd-legend-logo"
+                  :src="supermarketLogoUrl(series.name)"
+                  :alt="`Logo ${series.name}`"
+                  @error="handleSupermarketLogoError(series.name)"
+                />
+                <span v-else :style="{ '--store-color': series.color }" aria-hidden="true">
+                  {{ series.name.slice(0, 1) }}
+                </span>
+                {{ series.name }}
               </li>
             </ul>
           </section>
@@ -486,10 +596,21 @@ onMounted(() => void loadProduct())
                     }}</time>
                   </td>
                   <td>
-                    <span class="pd-table-store"
-                      ><i :style="{ '--store-color': storeColors[index % storeColors.length] }"></i
-                      >{{ entry.supermercado.nome }}</span
-                    >
+                    <span class="pd-table-store">
+                      <img
+                        v-if="supermarketLogoUrl(entry.supermercado.nome) && !supermarketLogoFailed(entry.supermercado.nome)"
+                        class="pd-table-logo"
+                        :src="supermarketLogoUrl(entry.supermercado.nome)"
+                        :alt="`Logo ${entry.supermercado.nome}`"
+                        @error="handleSupermarketLogoError(entry.supermercado.nome)"
+                      />
+                      <i
+                        v-else
+                        :style="{ '--store-color': storeColors[index % storeColors.length] }"
+                        aria-hidden="true"
+                      ></i>
+                      {{ entry.supermercado.nome }}
+                    </span>
                   </td>
                   <td class="pd-table-price">{{ formatPrice(entry.valor) }}</td>
                   <td>
@@ -584,9 +705,15 @@ onMounted(() => void loadProduct())
   background: #fbfcfa;
 }
 .pd-product-image img {
+  display: block;
   width: 100%;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
+  object-position: center center;
 }
 .pd-image-fallback {
   display: flex;
@@ -685,19 +812,34 @@ onMounted(() => void loadProduct())
 }
 .pd-current-store {
   display: grid;
-  grid-template-columns: 9px minmax(0, 1fr) auto;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 6px 8px;
+  gap: 6px 9px;
   min-width: 0;
   padding: 9px;
   border: 1px solid #e8ede8;
   border-radius: 4px;
 }
-.pd-store-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--store-color);
+.pd-store-logo {
+  display: grid;
+  width: 52px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  padding: 3px 4px;
+  border: 1px solid #edf0f3;
+  border-radius: 6px;
+  background: #fff;
+  color: #29415a;
+  font-size: 13px;
+  font-weight: 800;
+}
+.pd-store-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .pd-current-store > div {
   display: flex;
@@ -732,6 +874,58 @@ onMounted(() => void loadProduct())
   color: #317a4d;
   font-size: 8px;
 }
+
+/* Destaque visual para o supermercado mais barato */
+.pd-current-store.pd-store-cheapest {
+  border: 1px solid #238653;
+  background: #f0f8f2;
+  box-shadow: 0 2px 8px rgba(35, 134, 83, 0.1);
+}
+
+.pd-store-details {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.pd-cheapest-badge {
+  display: inline-block;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #238653;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.pd-price-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.pd-current-store .pd-price-difference {
+  color: #b45309;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.pd-current-store .pd-price-saving {
+  color: #238653;
+  font-size: 8px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.pd-current-store.pd-store-cheapest .pd-current-price {
+  color: #17683d;
+  font-size: 13px;
+}
+
 .pd-muted {
   margin: 10px 0 0;
   color: #8c968e;
@@ -863,11 +1057,22 @@ onMounted(() => void loadProduct())
   color: #758078;
   font-size: 8px;
 }
-.pd-legend li span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--store-color);
+.pd-legend li span,
+.pd-legend-logo {
+  display: inline-grid;
+  width: 29px;
+  height: 21px;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  padding: 2px 3px;
+  border: 1px solid #e6ebf0;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--store-color, #29415a);
+  font-size: 10px;
+  font-weight: 800;
+  object-fit: contain;
 }
 .pd-chart-empty {
   display: grid;
@@ -978,6 +1183,17 @@ onMounted(() => void loadProduct())
   border-radius: 3px;
   background: var(--store-color);
 }
+.pd-table-logo {
+  display: block;
+  width: 42px;
+  height: 24px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  padding: 2px 3px;
+  border: 1px solid #edf0f3;
+  border-radius: 4px;
+  background: #fff;
+}
 .pd-table-price {
   color: #3c4940 !important;
   font-weight: 700;
@@ -1050,7 +1266,11 @@ onMounted(() => void loadProduct())
     grid-template-columns: 1fr;
   }
   .pd-current-store {
-    grid-template-columns: 9px minmax(0, 1fr) auto;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+  }
+  .pd-store-logo {
+    width: 44px;
+    height: 30px;
   }
   .pd-filterbar {
     grid-template-columns: 1fr 1fr;
@@ -1115,5 +1335,38 @@ onMounted(() => void loadProduct())
   .pd-summary-values strong {
     font-size: 10px;
   }
+}
+
+/* Visual refinement: shared design language. */
+
+.pd-main { padding: 28px 0 45px; }
+.pd-back-row { margin-bottom: 22px; }
+.pd-section-heading h2, .pd-section-heading > h2 { color: #1d3552; }
+.pd-section-heading { margin-bottom: 15px; }
+.pd-current-store, .pd-chart-panel, .pd-summary-panel, .pd-records, .pd-filterbar {
+  border-color: #e1e8f0;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgb(24 48 77 / 4%);
+}
+.pd-current-store { padding: 16px; }
+.pd-store-details strong { color: #203752; }
+.pd-cheapest-badge { border-radius: 20px; background: #e2f6eb; color: #087c59; }
+.pd-current-price { color: #1e3551; }
+.pd-price-difference { color: #9a6519; }
+.pd-price-saving { color: #087452; }
+.pd-filterbar { padding: 18px; background: #fff; }
+.pd-filterbar select, .pd-filterbar input { min-height: 38px; border-color: #dce5ee; border-radius: 7px; }
+.pd-filter-button { min-height: 38px; border-radius: 8px; background: #087c59; }
+.pd-chart-panel, .pd-summary-panel, .pd-records { padding: 20px; background: #fff; }
+.pd-records table { width: 100%; border-collapse: collapse; }
+.pd-records th { background: #f4f7fb; color: #58718d; font-size: 11px; }
+.pd-records td { color: #3c536e; font-size: 12px; }
+.pd-records th, .pd-records td { padding: 12px 13px; border-bottom: 1px solid #e8edf3; }
+.pd-records tbody tr:hover { background: #f9fbfd; }
+@media (max-width: 760px) {
+  .pd-main { padding-top: 18px; }
+  .pd-chart-panel, .pd-summary-panel, .pd-records { padding: 14px; }
+  .pd-current-store { padding: 12px; }
+  .pd-records th, .pd-records td { padding: 10px; }
 }
 </style>

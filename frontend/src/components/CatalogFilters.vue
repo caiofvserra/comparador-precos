@@ -242,7 +242,7 @@ const emit = defineEmits<{ clear: [] }>()
   white-space: nowrap;
   clip-path: inset(50%);
 }
-@media (max-width: 1180px) {
+@media (max-width: 850px) {
   .catalog-filters {
     grid-column: 1;
     grid-row: 1;
@@ -277,5 +277,37 @@ const emit = defineEmits<{ clear: [] }>()
   .filter-section {
     padding: 9px 0;
   }
+}
+
+/* Visual refinement: shared design language. */
+
+.catalog-filters {
+  padding-right: 0;
+  border-right: 0;
+}
+.filters-heading {
+  min-height: 48px;
+  padding-bottom: 14px;
+  border-bottom-color: #e2e9f1;
+}
+.filters-heading strong { color: #203752; font-size: 13px; }
+.filters-heading strong svg { color: #087c59; }
+.filters-heading button { font-size: 10px; }
+.filter-section { padding: 15px 0; border-bottom-color: #e7edf3; }
+.filter-section h2 { color: #334b66; font-size: 12px; }
+.filter-option { min-height: 29px; color: #5b6f86; font-size: 11px; }
+.filter-option input { width: 15px; height: 15px; accent-color: #087c59; }
+.filter-option small { font-size: 10px; }
+.price-range { gap: 7px; }
+.price-range label > span { font-size: 9px; }
+.price-range input { height: 36px; padding: 0 8px; border-color: #dfe7ef; border-radius: 7px; font-size: 11px; }
+.range-separator { font-size: 10px; }
+.filter-note, .filter-error { font-size: 10px; }
+.brand-search { height: 38px; border-color: #dfe7ef; border-radius: 7px; }
+.brand-search input { font-size: 11px; }
+@media (max-width: 850px) {
+  .catalog-filters { padding-right: 0; border-right: 0; border-bottom: 0; }
+  .filter-section { padding: 10px 0; }
+  .filter-option { min-height: 27px; font-size: 10px; }
 }
 </style>

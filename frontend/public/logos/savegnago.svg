@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 112" role="img" aria-labelledby="title">
+  <title id="title">Savegnago Supermercados</title>
+  <path d="M24 40C31 12 66 2 99 12c17 5 29 17 34 30" fill="none" stroke="#123e86" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M39 30c15-14 39-17 55-5 7 5 10 11 10 17" fill="none" stroke="#123e86" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M43 35c12-11 28-13 40-5 8 5 7 12-1 16-8 4-19 4-30 0" fill="none" stroke="#e21d2b" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="51" cy="49" r="6.5" fill="#123e86"/><circle cx="97" cy="49" r="6.5" fill="#123e86"/>
+  <text x="16" y="84" fill="#e21d2b" stroke="#ffffff" stroke-width="2.4" paint-order="stroke" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" letter-spacing="-1.8">Savegnago</text>
+  <path d="M17 91H407V103H17Z" fill="#123e86"/>
+</svg>

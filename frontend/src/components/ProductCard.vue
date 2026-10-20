@@ -1,12 +1,37 @@
 <script setup lang="ts">
 import { Plus, Scale } from '@lucide/vue'
-import { ref } from 'vue'
-import { productImageUrl, productTitle } from '../composables/useShoppingList'
+import { ref, watch } from 'vue'
+import {
+  productFallbackImageUrl,
+  productImageUrl,
+  productTitle,
+} from '../composables/useShoppingList'
 import type { Product } from '../services/api'
 
-defineProps<{ product: Product }>()
+const props = defineProps<{ product: Product }>()
 const emit = defineEmits<{ compare: [product: Product]; add: [product: Product] }>()
 const imageFailed = ref(false)
+const usingFallback = ref(false)
+watch(
+  () => props.product.id,
+  () => {
+    imageFailed.value = false
+    usingFallback.value = false
+  },
+)
+function imageSource() {
+  return usingFallback.value
+    ? productFallbackImageUrl(props.product)
+    : productImageUrl(props.product)
+}
+function handleImageError() {
+  const fallback = productFallbackImageUrl(props.product)
+  if (!usingFallback.value && imageSource() !== fallback) {
+    usingFallback.value = true
+    return
+  }
+  imageFailed.value = true
+}
 </script>
 
 <template>
@@ -14,34 +39,34 @@ const imageFailed = ref(false)
     <button
       class="product-card-image"
       type="button"
-      :aria-label="`Comparar preços de ${productTitle(product)}`"
-      @click="emit('compare', product)"
+      :aria-label="`Comparar preços de ${productTitle(props.product)}`"
+      @click="emit('compare', props.product)"
     >
       <img
-        v-if="productImageUrl(product) && !imageFailed"
-        :src="productImageUrl(product)"
-        :alt="productTitle(product)"
-        @error="imageFailed = true"
+        v-if="!imageFailed"
+        :src="imageSource()"
+        :alt="productTitle(props.product)"
+        @error="handleImageError"
       />
       <span v-else class="product-image-fallback"
-        ><strong>{{ productTitle(product) }}</strong
+        ><strong>{{ productTitle(props.product) }}</strong
         ><small>Imagem indisponível</small></span
       >
     </button>
     <div class="product-card-copy">
-      <h3>{{ productTitle(product) }}</h3>
-      <p>{{ product.marca || 'Marca não informada' }}</p>
+      <h3>{{ productTitle(props.product) }}</h3>
+      <p>{{ props.product.marca || 'Marca não informada' }}</p>
     </div>
     <div class="product-card-actions">
-      <button class="product-compare" type="button" @click="emit('compare', product)">
+      <button class="product-compare" type="button" @click="emit('compare', props.product)">
         <Scale :size="14" aria-hidden="true" /> Comparar preços
       </button>
       <button
         class="product-add"
         type="button"
-        :aria-label="`Adicionar ${productTitle(product)} à lista`"
+        :aria-label="`Adicionar ${productTitle(props.product)} à lista`"
         title="Adicionar à lista"
-        @click="emit('add', product)"
+        @click="emit('add', props.product)"
       >
         <Plus :size="16" aria-hidden="true" />
       </button>
@@ -79,9 +104,15 @@ const imageFailed = ref(false)
 }
 .product-card-image img {
   display: block;
+  /* Use a predictable frame so the complete product image remains visible. */
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center center;
 }
 .product-image-fallback {
   display: flex;
@@ -186,6 +217,103 @@ const imageFailed = ref(false)
   .product-add {
     width: 30px;
     height: 30px;
+  }
+}
+
+/* Visual refinement: shared design language. */
+
+.product-card {
+  border-color: #e2e9f1;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgb(25 52 79 / 4%);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+.product-card:hover {
+  border-color: #b4dac8;
+  box-shadow: 0 9px 22px rgb(25 52 79 / 9%);
+  transform: translateY(-2px);
+}
+.product-card-image {
+  height: 176px;
+  padding: 10px;
+  background: #fff;
+}
+.product-image-fallback {
+  border-radius: 8px;
+  background: #f0f8f3;
+  color: #315f4b;
+}
+.product-image-fallback strong {
+  font-size: 11px;
+}
+.product-image-fallback small {
+  font-size: 10px;
+}
+.product-card-copy {
+  padding: 12px 13px 10px;
+}
+.product-card-copy h3 {
+  min-height: 38px;
+  color: #203752;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.product-card-copy p {
+  font-size: 11px;
+}
+.product-card-actions {
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+.product-compare {
+  min-height: 38px;
+  border-radius: 8px;
+  background: #087c59;
+  font-size: 11px;
+}
+.product-compare:hover {
+  background: #066848;
+}
+.product-add {
+  width: 38px;
+  height: 38px;
+  border-color: #dce7e1;
+  border-radius: 8px;
+  color: #087c59;
+}
+.product-add:hover {
+  border-color: #087c59;
+  background: #eaf7f1;
+}
+@media (max-width: 520px) {
+  .product-card-image {
+    height: 136px;
+    padding: 8px;
+  }
+  .product-card-copy {
+    padding: 8px 9px;
+  }
+  .product-card-copy h3 {
+    min-height: 34px;
+    font-size: 11px;
+  }
+  .product-card-copy p {
+    font-size: 9px;
+  }
+  .product-card-actions {
+    gap: 5px;
+    padding: 0 8px 8px;
+  }
+  .product-compare {
+    min-height: 32px;
+    font-size: 9px;
+  }
+  .product-add {
+    width: 32px;
+    height: 32px;
   }
 }
 </style>
