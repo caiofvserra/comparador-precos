@@ -161,8 +161,9 @@ class Command(BaseCommand):
                             nome=nome,
                             marca=marca,
                             codigo_barras=ean,
+                            imagem_url=item.get("imagem_url") or None,
                         )
-
+                        
                     if oferta is None:
                         oferta = OfertaFonte(
                             produto=produto,

@@ -231,7 +231,8 @@ def buscar_produtos(
 
         if ean == "0":
             ean = ""
-
+        imagens = item.get("images") or []
+        imagem_url = imagens[0].get("imageUrl") if imagens else ""
         produtos.append({
             "id_externo": str(
                 produto.get("productId") or ""
@@ -252,6 +253,7 @@ def buscar_produtos(
                 False,
             ),
             "url": produto.get("link") or "",
+            "imagem_url": imagem_url,
         })
 
     return produtos
