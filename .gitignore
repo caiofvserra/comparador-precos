@@ -9,3 +9,6 @@ __pycache__/
 # Backups de banco de dados
 *.backup
 *.dump
+
+# Arquivos compactados
+*.rar
