@@ -35,12 +35,27 @@ def palavras_busca(produto):
 
     # Evita repetir consultas iguais.
     return list(dict.fromkeys(t for t in termos if t))
+def marca_compativel(produto, marca_site):
+    marca_local = normalizar(produto.marca)
+    marca_site = normalizar(marca_site)
+    if marca_local and marca_site:
+        return marca_local == marca_site
+    return True
+
+
+def nome_compativel(nome_local, nome_site):
+    local = set(normalizar(nome_local).split())
+    externo = set(normalizar(nome_site).split())
+    if not local or not externo:
+        return False
+    intersecao = local & externo
+    return len(intersecao) / len(local) >= 0.6
 
 
 class Command(BaseCommand):
     help = (
-        "Concilia produtos do Savegnago com o Atacadão "
-        "por EAN exato, em simulação por padrão."
+        "Concilia produtos do Savegnago com o AtacadÃ£o "
+        "por EAN exato, em simulaÃ§Ã£o por padrÃ£o."
     )
 
     def add_arguments(self, parser):
@@ -49,24 +64,24 @@ class Command(BaseCommand):
             "--quantidade",
             type=int,
             default=20,
-            help="Máximo de resultados consultados por busca (1 a 50).",
+            help="MÃ¡ximo de resultados consultados por busca (1 a 50).",
         )
         parser.add_argument(
             "--limite",
             type=int,
             default=0,
-            help="Limita o número de produtos processados; 0 significa todos.",
+            help="Limita o nÃºmero de produtos processados; 0 significa todos.",
         )
         parser.add_argument(
             "--offset",
             type=int,
             default=0,
-            help="Número de produtos a pular na lista ordenada.",
+            help="NÃºmero de produtos a pular na lista ordenada.",
         )
         parser.add_argument(
             "--gravar",
             action="store_true",
-            help="Grava ofertas e preços iniciais das correspondências exatas.",
+            help="Grava ofertas e preÃ§os iniciais das correspondÃªncias exatas.",
         )
 
     def handle(self, *args, **options):
@@ -77,7 +92,7 @@ class Command(BaseCommand):
         gravar = options["gravar"]
 
         if len(cep) != 8:
-            self.stderr.write(self.style.ERROR("CEP inválido."))
+            self.stderr.write(self.style.ERROR("CEP invÃ¡lido."))
             return
 
         if not 1 <= quantidade <= 50:
@@ -88,13 +103,13 @@ class Command(BaseCommand):
 
         if limite < 0:
             self.stderr.write(
-                self.style.ERROR("--limite não pode ser negativo.")
+                self.style.ERROR("--limite nÃ£o pode ser negativo.")
             )
             return
 
         if offset < 0:
             self.stderr.write(
-                self.style.ERROR("--offset não pode ser negativo.")
+                self.style.ERROR("--offset nÃ£o pode ser negativo.")
             )
             return
 
@@ -110,13 +125,13 @@ class Command(BaseCommand):
 
         if not savegnago:
             self.stderr.write(
-                self.style.ERROR("Supermercado Savegnago ativo não encontrado.")
+                self.style.ERROR("Supermercado Savegnago ativo nÃ£o encontrado.")
             )
             return
 
         if not atacadao:
             self.stderr.write(
-                self.style.ERROR("Supermercado Atacadão ativo não encontrado.")
+                self.style.ERROR("Supermercado AtacadÃ£o ativo nÃ£o encontrado.")
             )
             return
 
@@ -155,8 +170,8 @@ class Command(BaseCommand):
         self.stdout.write(f"CEP regional: {cep}")
         self.stdout.write(
             self.style.WARNING(
-                "MODO GRAVAÇÃO" if gravar
-                else "SIMULAÇÃO: banco não será alterado."
+                "MODO GRAVAÃ‡ÃƒO" if gravar
+                else "SIMULAÃ‡ÃƒO: banco nÃ£o serÃ¡ alterado."
             )
         )
 
@@ -164,7 +179,7 @@ class Command(BaseCommand):
             sessao = criar_sessao(cep)
         except (requests.RequestException, ValueError) as erro:
             self.stderr.write(
-                self.style.ERROR(f"Falha ao criar sessão do Atacadão: {erro}")
+                self.style.ERROR(f"Falha ao criar sessÃ£o do AtacadÃ£o: {erro}")
             )
             return
 
@@ -173,6 +188,7 @@ class Command(BaseCommand):
             "sem_ean": 0,
             "sem_resultados": 0,
             "ean_nao_encontrado": 0,
+            "candidatos_ean_divergente": 0,
             "indisponiveis": 0,
             "preco_invalido": 0,
             "correspondencias_exatas": 0,
@@ -190,7 +206,7 @@ class Command(BaseCommand):
 
             if not ean.isdigit() or len(ean) not in (8, 12, 13, 14):
                 contagem["sem_ean"] += 1
-                self.stdout.write(f"SEM EAN VÁLIDO — {produto.nome}")
+                self.stdout.write(f"SEM EAN VÃLIDO â€” {produto.nome}")
                 continue
 
             oferta_existente = OfertaFonte.objects.filter(
@@ -229,7 +245,7 @@ class Command(BaseCommand):
                 except (requests.RequestException, ValueError) as erro:
                     consulta_falhou = True
                     self.stdout.write(
-                        f"FALHA NA BUSCA — {produto.nome} | {erro}"
+                        f"FALHA NA BUSCA â€” {produto.nome} | {erro}"
                     )
                     break
 
@@ -239,7 +255,7 @@ class Command(BaseCommand):
 
             if not resultados_por_id:
                 contagem["sem_resultados"] += 1
-                self.stdout.write(f"NENHUM RESULTADO — {produto.nome}")
+                self.stdout.write(f"NENHUM RESULTADO â€” {produto.nome}")
                 continue
 
             candidatos = []
@@ -275,12 +291,60 @@ class Command(BaseCommand):
 
             if not candidatos:
                 contagem["ean_nao_encontrado"] += 1
-                self.stdout.write(
-                    f"SEM CORRESPONDÊNCIA EXATA — {produto.nome} | EAN {ean}"
-                )
-                continue
+                encontrados = 0
 
-            # Escolhe apenas uma oferta disponível, com preço válido.
+                for resultado in resultados_por_id.values():
+                    for item in resultado.get("items") or []:
+                        ean_site = str(item.get("ean") or "").strip()
+                        if ean_site == "0":
+                            ean_site = ""
+
+                        if not ean_site or ean_site == ean:
+                            continue
+
+                        nome_site = resultado.get("productName") or item.get("name") or ""
+                        if not marca_compativel(produto, resultado.get("brand")):
+                            continue
+                        if not nome_compativel(produto.nome, nome_site):
+                            continue
+
+                        sku_site = str(item.get("itemId") or "").strip()
+                        if not sku_site:
+                            continue
+
+                        vendedor_site = next(
+                            (
+                                v for v in item.get("sellers") or []
+                                if "ATACADAO" in str(v.get("sellerName") or "").upper()
+                            ),
+                            None,
+                        )
+                        if vendedor_site is None:
+                            continue
+
+                        comercial_site = vendedor_site.get("commertialOffer") or {}
+                        disponivel_site = (
+                            comercial_site.get("IsAvailable", False)
+                            and comercial_site.get("AvailableQuantity", 0) > 0
+                        )
+                        preco_site = comercial_site.get("Price", 0)
+
+                        encontrados += 1
+                        contagem["candidatos_ean_divergente"] += 1
+                        self.stdout.write(
+                            f"CANDIDATO EAN DIVERGENTE — {produto.nome}\n"
+                            f"  Produto no Atacadão: {nome_site}\n"
+                            f"  EAN Savegnago: {ean} | EAN Atacadão: {ean_site}\n"
+                            f"  SKU: {sku_site} | Disponível: {disponivel_site}\n"
+                            f"  Preço retornado: R$ {preco_site}"
+                        )
+
+                if encontrados == 0:
+                    self.stdout.write(
+                        f"SEM CORRESPONDÊNCIA EXATA — {produto.nome} | EAN {ean}"
+                    )
+                continue
+            # Escolhe apenas uma oferta disponÃ­vel, com preÃ§o vÃ¡lido.
             escolhido = None
             preco_escolhido = None
 
@@ -305,7 +369,7 @@ class Command(BaseCommand):
                 break
 
             if escolhido is None:
-                # Diferencia indisponibilidade de preço inválido.
+                # Diferencia indisponibilidade de preÃ§o invÃ¡lido.
                 tem_disponivel = any(
                     (v.get("commertialOffer") or {}).get(
                         "IsAvailable", False
@@ -318,10 +382,10 @@ class Command(BaseCommand):
 
                 if tem_disponivel:
                     contagem["preco_invalido"] += 1
-                    self.stdout.write(f"PREÇO INVÁLIDO — {produto.nome}")
+                    self.stdout.write(f"PREÃ‡O INVÃLIDO â€” {produto.nome}")
                 else:
                     contagem["indisponiveis"] += 1
-                    self.stdout.write(f"INDISPONÍVEL — {produto.nome}")
+                    self.stdout.write(f"INDISPONÃVEL â€” {produto.nome}")
                 continue
 
             resultado, item, vendedor = escolhido
@@ -335,7 +399,7 @@ class Command(BaseCommand):
                 or url.startswith("https://secure.atacadao.com.br/")
             ):
                 contagem["falhas_consulta"] += 1
-                self.stdout.write(f"URL INVÁLIDA — {produto.nome}")
+                self.stdout.write(f"URL INVÃLIDA â€” {produto.nome}")
                 continue
 
             sku = str(item.get("itemId") or "").strip()
@@ -344,17 +408,17 @@ class Command(BaseCommand):
             if oferta_existente:
                 contagem["ofertas_ja_existentes"] += 1
                 self.stdout.write(
-                    f"OFERTA JÁ EXISTE — {produto.nome} | "
+                    f"OFERTA JÃ EXISTE â€” {produto.nome} | "
                     f"SKU {oferta_existente.codigo_externo}"
                 )
                 continue
 
             contagem["ofertas_novas"] += 1
             self.stdout.write(
-                f"{'CRIAR' if gravar else 'SIMULAR OFERTA'} — {produto.nome}\n"
-                f"  EAN: {ean} | SKU Atacadão: {sku}\n"
+                f"{'CRIAR' if gravar else 'SIMULAR OFERTA'} â€” {produto.nome}\n"
+                f"  EAN: {ean} | SKU AtacadÃ£o: {sku}\n"
                 f"  Produto no site: {nome_externo}\n"
-                f"  Preço Atacadão: R$ {preco_escolhido:.2f}\n"
+                f"  PreÃ§o AtacadÃ£o: R$ {preco_escolhido:.2f}\n"
                 f"  URL: {url}"
             )
 
@@ -384,7 +448,7 @@ class Command(BaseCommand):
             except Exception as erro:
                 contagem["falhas_consulta"] += 1
                 self.stdout.write(
-                    f"FALHA AO GRAVAR — {produto.nome}: {erro}"
+                    f"FALHA AO GRAVAR â€” {produto.nome}: {erro}"
                 )
 
         self.stdout.write("")
@@ -395,11 +459,11 @@ class Command(BaseCommand):
 
         if gravar:
             self.stdout.write(
-                self.style.SUCCESS("Conciliação concluída.")
+                self.style.SUCCESS("ConciliaÃ§Ã£o concluÃ­da.")
             )
         else:
             self.stdout.write(
                 self.style.WARNING(
-                    "Simulação concluída; banco inalterado."
+                    "SimulaÃ§Ã£o concluÃ­da; banco inalterado."
                 )
             )
