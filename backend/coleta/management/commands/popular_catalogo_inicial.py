@@ -27,7 +27,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         produtos_antes = Produto.objects.count()
-        if produtos_antes >= LIMITE_MINIMO:
+        if produtos_antes >= LIMITE_MINIMO and Preco.objects.count() >= LIMITE_MINIMO:
             self.stdout.write(
                 f"[bootstrap] Catálogo já tem {produtos_antes} produtos; "
                 "nenhuma coleta inicial necessária."
@@ -39,7 +39,7 @@ class Command(BaseCommand):
             f"produtos atuais: {produtos_antes}."
         )
         for termo in TERMOS_INICIAIS:
-            if Produto.objects.count() >= LIMITE_MINIMO:
+            if (Produto.objects.count() >= LIMITE_MINIMO and Preco.objects.count() >= LIMITE_MINIMO):
                 break
 
             self.stdout.write(f"[bootstrap] Consultando: {termo}")
