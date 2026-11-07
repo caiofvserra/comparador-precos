@@ -212,8 +212,8 @@ export async function loadCatalog() {
   return catalogPromise
 }
 
-export async function searchCatalog(query: string) {
-  const products = await getProducts(query)
+export async function searchCatalog(query: string, minRedes = 0) {
+  const products = await getProducts(query, minRedes, !isDemoData)
   rememberProducts(products)
   return products
 }
