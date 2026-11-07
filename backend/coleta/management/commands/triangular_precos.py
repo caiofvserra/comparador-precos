@@ -42,10 +42,15 @@ def normalizar_oferta(item, loja):
     ean = str(item.get("codigo_barras") or "").strip()
     nome = str(item.get("nome") or "").strip()
     url = str(item.get("url") or "").strip()
+    origem_valida = url.startswith(LOJAS[loja] + "/")
+    if loja == "Atacadão":
+        origem_valida = origem_valida or url.startswith(
+            "https://secure.atacadao.com.br/"
+        )
     if (
         not nome or not ean.isdigit() or len(ean) not in (8, 12, 13, 14)
         or item.get("disponivel") is not True
-        or not url.startswith(LOJAS[loja] + "/")
+        or not origem_valida
     ):
         return None
     if loja == "Carrefour" and not url.startswith(

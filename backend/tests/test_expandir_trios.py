@@ -76,6 +76,26 @@ class VtexPaginadoTests(TestCase):
         self.assertEqual(produtos[EAN]["url"],
                          "https://www.atacadao.com.br/biscoito/p")
 
+    def test_aceita_link_secure_atacadao_confirmado_pela_api(self):
+        from coleta.management.commands.triangular_precos import normalizar_oferta
+
+        bruto = produto_vtex()
+        bruto["link"] = "https://secure.atacadao.com.br/biscoito/p"
+        ofertas = extrair_skus([bruto], "Atacadão")
+        self.assertEqual(list(ofertas), [EAN])
+        self.assertEqual(
+            ofertas[EAN]["url"],
+            "https://secure.atacadao.com.br/biscoito/p",
+        )
+        self.assertIsNotNone(normalizar_oferta({
+            "nome": "Biscoito Marilan 300g",
+            "codigo_barras": EAN,
+            "preco": 4.89,
+            "disponivel": True,
+            "vendedor_nome": "ATACADAO SA",
+            "url": "https://secure.atacadao.com.br/biscoito/p",
+        }, "Atacadão"))
+
     def test_nao_aceita_vendedor_diferente(self):
         bruto = produto_vtex()
         bruto["items"][0]["sellers"][0]["sellerName"] = "OUTRA LOJA"
