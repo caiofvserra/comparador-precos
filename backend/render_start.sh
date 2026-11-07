@@ -3,20 +3,22 @@ set -e
 
 python manage.py migrate --noinput
 
-# Importações opcionais em série, sem bloquear a disponibilidade do site.
-# O piloto multimercado é ativado somente sob BOOTSTRAP_COMPARACAO=true.
-if [ "${BOOTSTRAP_SAVEGNAGO:-false}" = "true" ] || [ "${BOOTSTRAP_COMPARACAO:-false}" = "true" ]; then
+# Prioriza a subida do Gunicorn e o health check. A coleta começa
+# somente depois de uma pequena espera, em um único subprocesso.
+# A importação multirrede depende de habilitação explícita.
+if [ "${BOOTSTRAP_COMPARACAO:-false}" = "true" ]; then
   (
-    if [ "${BOOTSTRAP_SAVEGNAGO:-false}" = "true" ]; then
-      echo "[bootstrap] Validando catálogo inicial Savegnago."
-      python -u manage.py popular_catalogo_inicial ||
-        echo "[bootstrap] Falha no Savegnago; servidor continua disponível."
-    fi
-    if [ "${BOOTSTRAP_COMPARACAO:-false}" = "true" ]; then
-      echo "[bootstrap] Iniciando piloto de comparação multirrede."
-      python -u manage.py popular_comparacao_inicial ||
-        echo "[bootstrap] Falha na comparação; servidor continua disponível."
-    fi
+    sleep 25
+    echo "[bootstrap] Piloto multimercado iniciado depois da subida do site."
+    python -u manage.py popular_comparacao_inicial ||
+      echo "[bootstrap] Coleta multirrede indisponível; site preservado."
+  ) &
+elif [ "${BOOTSTRAP_SAVEGNAGO:-false}" = "true" ]; then
+  (
+    sleep 25
+    echo "[bootstrap] Catálogo inicial Savegnago iniciado após health check."
+    python -u manage.py popular_catalogo_inicial ||
+      echo "[bootstrap] Fonte Savegnago indisponível; site preservado."
   ) &
 fi
 
