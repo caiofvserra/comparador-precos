@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: comparador-precos-caio
+    name: comparador-precos-web
     runtime: docker
     plan: free
     region: virginia
