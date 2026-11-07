@@ -219,11 +219,17 @@ class Command(BaseCommand):
                 ofertas["Atacadão"]["marca"]).strip().casefold()
             for ofertas in faltando.values()
         )
-        consultas = []
-        for marca, _ in marcas.most_common():
-            if len(marca) >= 3:
-                consultas.append(marca)
+        consultas = [
+            marca for marca, _ in marcas.most_common(max_buscas // 2)
+            if len(marca) >= 3
+        ]
         consultas.extend(CARREFOUR_SEMENTES[lote])
+        # Usa buscas gerais e marcas; evita consumir todo o limite numa
+        # lista muito grande de marcas pouco frequentes.
+        consultas.extend(
+            marca for marca, _ in marcas.most_common()
+            if len(marca) >= 3
+        )
         consultas = list(dict.fromkeys(consultas))
         for termo in consultas[:max_buscas]:
             cont["buscas_carrefour"] += 1
