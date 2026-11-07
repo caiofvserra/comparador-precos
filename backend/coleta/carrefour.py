@@ -127,6 +127,17 @@ def _extrair_produto(html, url):
             or ""
         ).strip()
 
+        imagem = produto.get("image") or ""
+        if isinstance(imagem, list):
+            imagem = imagem[0] if imagem else ""
+        if isinstance(imagem, dict):
+            imagem = (
+                imagem.get("url")
+                or imagem.get("contentUrl")
+                or ""
+            )
+        imagem_url = str(imagem or "").strip()
+
         return {
             "nome": nome,
             "marca": str(marca).strip(),
@@ -135,6 +146,7 @@ def _extrair_produto(html, url):
             "preco": preco,
             "disponivel": disponivel,
             "url": url,
+            "imagem_url": imagem_url,
         }
 
     return None

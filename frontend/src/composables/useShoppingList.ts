@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { getProducts, simulateList, type Product, type Simulation } from '../services/api'
+import { getProducts, isDemoData, simulateList, type Product, type Simulation } from '../services/api'
 
 export type BasketItem = { produto_id: number; quantidade: number }
 export type ShoppingListEntry = BasketItem & { product: Product | undefined; imageUrl: string }
@@ -100,7 +100,7 @@ function localCatalogImageUrl(product: Product): string | undefined {
 
 export function productFallbackImageUrl(product: Product | null | undefined) {
   if (!product) return '/images/products/generic.svg'
-  const mappedPhoto = productPhotos[product.id]
+  const mappedPhoto = isDemoData ? productPhotos[product.id] : undefined
   if (mappedPhoto) return mappedPhoto
 
   const normalizedName = normalizedProductName(product)
@@ -177,15 +177,14 @@ export function productFallbackImageUrl(product: Product | null | undefined) {
 
 export function productImageUrl(product: Product) {
   const productWithImage = product as Product & {
-    imagem_url?: string | null
     image_url?: string | null
   }
-  // Submitted product photographs take precedence for matched catalog items.
-  // Other products keep their API image and existing illustrative fallback.
+  // Em dados reais, a imagem da API tem prioridade. Fotografias locais
+  // específicas de marca são usadas apenas no modo demonstrativo.
   return (
-    localCatalogImageUrl(product) ||
-    productWithImage.imagem_url ||
+    product.imagem_url ||
     productWithImage.image_url ||
+    (isDemoData ? localCatalogImageUrl(product) : undefined) ||
     productFallbackImageUrl(product)
   )
 }

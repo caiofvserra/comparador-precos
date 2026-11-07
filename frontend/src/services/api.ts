@@ -2,11 +2,12 @@ export type Product = {
   id: number
   nome: string
   marca?: string | null
+  imagem_url?: string | null
   categorias?: string[]
   preco_minimo?: string | null
   preco_maximo?: string | null
 }
-export type Supermarket = { id: number; nome: string }
+export type Supermarket = { id: number; nome: string; site_url?: string | null }
 export type Price = {
   supermercado: Supermarket
   disponivel: boolean
@@ -42,9 +43,9 @@ export type Simulation = { total_itens: number; supermercados: SupermarketResult
 export const isDemoData = !import.meta.env.VITE_API_URL
 
 const supermarkets: Supermarket[] = [
-  { id: 1, nome: 'Atacadão' },
-  { id: 2, nome: 'Savegnago' },
-  { id: 3, nome: 'Carrefour' },
+  { id: 1, nome: 'Atacadão', site_url: 'https://www.atacadao.com.br/' },
+  { id: 2, nome: 'Savegnago', site_url: 'https://www.savegnago.com.br/' },
+  { id: 3, nome: 'Carrefour', site_url: 'https://mercado.carrefour.com.br/' },
 ]
 
 const products: Product[] = [

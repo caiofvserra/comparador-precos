@@ -316,6 +316,18 @@ Gravação:
 
 .\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_carrefour --todos --gravar
 
+🔁 Atualizar as três redes em uma única execução
+
+Simulação:
+
+.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_todos --cep 14010000
+
+Gravação:
+
+.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_todos --cep 14010000 --gravar
+
+O comando executa Savegnago, Atacadão e Carrefour em sequência e informa eventuais falhas sem interromper as demais redes.
+
 ⏰ Atualização automática de preços
 
 As atualizações periódicas dos três supermercados são executadas pelo Agendador de Tarefas do Windows.
@@ -373,6 +385,8 @@ Para executar todos os testes automatizados:
 .\backend\.venv\Scripts\python.exe .\backend\manage.py test tests
 
 Os testes verificam o funcionamento das funcionalidades implementadas no backend. A execução dos testes não realiza atualizações reais de preços nos supermercados.
+
+O repositório também possui GitHub Actions para executar automaticamente os testes do backend com PostgreSQL e o build do frontend em Pull Requests e pushes para a main.
 
 🔌 Endpoints principais da API
 

@@ -43,9 +43,20 @@ class Command(BaseCommand):
             nome__iexact="Carrefour"
         ).first()
 
-        if supermercado is None:
+        if supermercado is None and gravar:
+            supermercado = Supermercado.objects.create(
+                nome="Carrefour",
+                endereco="",
+                complemento="",
+                cidade="Ribeirão Preto",
+                estado="SP",
+                site_url="https://mercado.carrefour.com.br",
+                ativo=True,
+            )
+
+        if supermercado is None and todos:
             raise CommandError(
-                "Carrefour não está cadastrado em Supermercado."
+                "Carrefour não está cadastrado e não há ofertas para atualizar."
             )
 
         if ean_alvo and not Produto.objects.filter(
@@ -166,6 +177,12 @@ class Command(BaseCommand):
                     continue
 
                 produto = Produto.objects.filter(codigo_barras=ean).first()
+
+                if produto is not None:
+                    imagem_url = str(item.get("imagem_url") or "").strip()
+                    if gravar and imagem_url and not produto.imagem_url:
+                        produto.imagem_url = imagem_url
+                        produto.save(update_fields=["imagem_url"])
 
                 if produto is None:
                     contadores["sem_correspondencia"] += 1
