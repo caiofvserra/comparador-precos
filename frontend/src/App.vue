@@ -17,6 +17,12 @@ const selectedBrands = ref<string[]>([])
 const selectedCategories = ref<string[]>([])
 const minPrice = ref('')
 const maxPrice = ref('')
+const coverageOptions: { min: 0 | 2 | 3; label: string }[] = [
+  { min: 3, label: '3 supermercados' },
+  { min: 2, label: '2 ou mais' },
+  { min: 0, label: 'Todos' },
+]
+const coverageFilter = ref<0 | 2 | 3>(isDemoData ? 0 : 3)
 const products = ref<Product[]>([])
 const router = useRouter()
 const {
@@ -102,7 +108,7 @@ async function searchProducts(query = search.value) {
   loadingProducts.value = true
   productsError.value = ''
   try {
-    const result = await searchCatalog(query)
+    const result = await searchCatalog(query, coverageFilter.value)
     if (currentSequence === searchSequence) products.value = result
   } catch (error) {
     if (currentSequence === searchSequence) {
@@ -133,6 +139,12 @@ function clearFilters() {
   maxPrice.value = ''
 }
 
+function selectCoverage(min: 0 | 2 | 3) {
+  if (coverageFilter.value === min) return
+  coverageFilter.value = min
+  void searchProducts()
+}
+
 function searchExample(query: string) {
   search.value = query
   void searchProducts(query)
@@ -144,6 +156,10 @@ watch(search, () => {
 })
 
 onMounted(async () => {
+  if (!isDemoData) {
+    await searchProducts()
+    return
+  }
   try {
     const result = await loadCatalog()
     products.value = result
@@ -214,6 +230,22 @@ onMounted(async () => {
               </div>
               <span v-if="loadingProducts" class="mvp-inline-state">Buscando…</span>
             </div>
+            <div v-if="!isDemoData" class="mvp-coverage-filter" aria-label="Disponibilidade nos supermercados">
+              <span>Comparar preços em:</span>
+              <button
+                v-for="option in coverageOptions"
+                :key="option.min"
+                type="button"
+                :class="{ active: coverageFilter === option.min }"
+                :aria-pressed="coverageFilter === option.min"
+                @click="selectCoverage(option.min)"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+            <p v-if="!isDemoData && coverageFilter === 3" class="mvp-coverage-note">
+              Mostrando apenas produtos com preços cadastrados em Atacadão, Savegnago e Carrefour.
+            </p>
             <p v-if="hasCatalogFilters" class="mvp-filter-summary">
               <span v-if="selectedCategories.length">{{ selectedCategories.join(', ') }}</span>
               <span v-if="selectedBrands.length">{{ selectedBrands.join(', ') }}</span>
@@ -229,7 +261,9 @@ onMounted(async () => {
             </div>
             <div v-else-if="!visibleProducts.length" class="mvp-state mvp-empty">
               <span aria-hidden="true">⌕</span><strong>Nenhum produto encontrado</strong
-              ><small>Tente outro nome ou marca.</small>
+              ><small>{{ coverageFilter === 3 && !isDemoData
+                ? 'Não há resultados com preços nas três redes para essa busca. Veja 2 ou mais ou Todos.'
+                : 'Tente outro nome ou marca.' }}</small>
             </div>
             <div v-else class="mvp-product-grid">
               <ProductCard
@@ -538,6 +572,39 @@ onMounted(async () => {
   font-family: inherit;
   font-size: inherit;
   font-weight: inherit;
+}
+.mvp-coverage-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.mvp-coverage-filter > span {
+  margin-right: 4px;
+  color: #557164;
+  font-size: 11px;
+  font-weight: 700;
+}
+.mvp-coverage-filter > button {
+  padding: 7px 10px;
+  border: 1px solid #d4e5da;
+  border-radius: 8px;
+  background: #fff;
+  color: #527364;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mvp-coverage-filter > button.active {
+  border-color: #087c59;
+  background: #e5f5eb;
+  color: #075b42;
+}
+.mvp-coverage-note {
+  margin: 0 0 14px;
+  color: #698475;
+  font-size: 10px;
 }
 .mvp-product-grid {
   display: grid;
