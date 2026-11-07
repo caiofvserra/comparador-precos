@@ -23,6 +23,7 @@ class ProdutoSerializer(serializers.ModelSerializer):
     )
     preco_minimo = serializers.SerializerMethodField()
     preco_maximo = serializers.SerializerMethodField()
+    quantidade_redes = serializers.SerializerMethodField()
 
     class Meta:
         model = Produto
@@ -35,7 +36,22 @@ class ProdutoSerializer(serializers.ModelSerializer):
             "categorias",
             "preco_minimo",
             "preco_maximo",
+            "quantidade_redes",
         ]
+
+    def get_quantidade_redes(self, produto):
+        if hasattr(produto, "quantidade_redes"):
+            return produto.quantidade_redes
+        return (
+            produto.ofertas.filter(
+                ativo=True,
+                supermercado__ativo=True,
+                precos__isnull=False,
+            )
+            .values("supermercado_id")
+            .distinct()
+            .count()
+        )
 
     def _valores_atuais(self, produto):
         valores = []
