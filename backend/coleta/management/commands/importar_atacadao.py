@@ -100,6 +100,7 @@ class Command(BaseCommand):
                     marca = (item.get("marca") or "").strip()
                     ean = (item.get("codigo_barras") or "").strip()
                     url = (item.get("url") or "").strip()
+                    imagem_url = (item.get("imagem_url") or "").strip()
                     sku = (item.get("sku") or "").strip()
                     vendedor_nome = (item.get("vendedor_nome") or "").strip()
 
@@ -161,6 +162,10 @@ class Command(BaseCommand):
                         ).first()
 
                     if produto:
+                        if gravar and imagem_url and not produto.imagem_url:
+                            produto.imagem_url = imagem_url
+                            produto.save(update_fields=["imagem_url"])
+
                         self.stdout.write(
                             f"PRODUTO EXISTENTE — {produto.nome}"
                         )
@@ -196,6 +201,7 @@ class Command(BaseCommand):
                             nome=nome,
                             marca=marca,
                             codigo_barras=ean,
+                            imagem_url=imagem_url or None,
                         )
 
                     if oferta is None:
