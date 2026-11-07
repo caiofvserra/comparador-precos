@@ -56,6 +56,10 @@ function handleImageError() {
     <div class="product-card-copy">
       <h3>{{ productTitle(props.product) }}</h3>
       <p>{{ props.product.marca || 'Marca não informada' }}</p>
+      <span v-if="props.product.quantidade_redes" class="product-card-coverage">
+        Preço em {{ props.product.quantidade_redes }}
+        {{ props.product.quantidade_redes === 1 ? 'supermercado' : 'supermercados' }}
+      </span>
     </div>
     <div class="product-card-actions">
       <button class="product-compare" type="button" @click="emit('compare', props.product)">
@@ -137,6 +141,17 @@ function handleImageError() {
 }
 .product-card-copy {
   padding: 7px 10px 8px;
+}
+.product-card-coverage {
+  display: inline-block;
+  margin-top: 7px;
+  padding: 4px 7px;
+  border: 1px solid #d6ebdf;
+  border-radius: 6px;
+  background: #eef8f2;
+  color: #086845;
+  font-size: 9px;
+  font-weight: 700;
 }
 .product-card-copy h3 {
   min-height: 32px;

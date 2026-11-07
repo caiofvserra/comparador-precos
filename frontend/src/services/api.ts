@@ -6,6 +6,7 @@ export type Product = {
   categorias?: string[]
   preco_minimo?: string | null
   preco_maximo?: string | null
+  quantidade_redes?: number
 }
 export type Supermarket = { id: number; nome: string; site_url?: string | null }
 export type Price = {
@@ -142,17 +143,37 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export async function getProducts(query = ''): Promise<Product[]> {
+export async function getProducts(
+  query = '',
+  minRedes = 0,
+  priorizarRedes = false,
+): Promise<Product[]> {
   const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
   if (!isDemoData) {
-    const queryString = normalizedQuery ? `?q=${encodeURIComponent(normalizedQuery)}` : ''
-    return request(`/api/v1/produtos/${queryString}`)
+    const params = new URLSearchParams()
+    if (normalizedQuery) params.set('q', normalizedQuery)
+    if (minRedes > 0) params.set('min_redes', String(minRedes))
+    if (priorizarRedes) params.set('priorizar_redes', '1')
+    const queryString = params.toString()
+    return request(`/api/v1/produtos/${queryString ? `?${queryString}` : ''}`)
   }
   const matches = products
     .filter((product) =>
       `${product.nome} ${product.marca ?? ''}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery),
     )
-    .sort((first, second) => first.nome.localeCompare(second.nome, 'pt-BR'))
+    .filter((product) => {
+      const count = (comparisons[product.id]?.precos ?? [])
+        .filter((price) => price.disponivel && price.valor !== null).length
+      return count >= minRedes
+    })
+    .sort((first, second) => {
+      const firstCount = (comparisons[first.id]?.precos ?? [])
+        .filter((price) => price.disponivel && price.valor !== null).length
+      const secondCount = (comparisons[second.id]?.precos ?? [])
+        .filter((price) => price.disponivel && price.valor !== null).length
+      if (priorizarRedes && firstCount !== secondCount) return secondCount - firstCount
+      return first.nome.localeCompare(second.nome, 'pt-BR')
+    })
   return matches.map((product) => {
     const prices = (comparisons[product.id]?.precos ?? [])
       .filter((price) => price.disponivel && price.valor !== null)
@@ -161,6 +182,7 @@ export async function getProducts(query = ''): Promise<Product[]> {
       ...product,
       preco_minimo: prices.length ? Math.min(...prices).toFixed(2) : null,
       preco_maximo: prices.length ? Math.max(...prices).toFixed(2) : null,
+      quantidade_redes: prices.length,
     }
   })
 }

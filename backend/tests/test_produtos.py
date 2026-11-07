@@ -89,6 +89,93 @@ class ProdutoBuscaTests(APITestCase):
         )
 
 
+    def test_filtra_apenas_produtos_com_precos_em_tres_redes(self):
+        from django.utils import timezone
+        from catalogo.models import Supermercado
+        from precos.models import OfertaFonte, Preco
+
+        produto = Produto.objects.create(
+            nome="Biscoito experimental comparável",
+            marca="Marca experimental",
+            codigo_barras="7891234567001",
+        )
+        mercados = list(Supermercado.objects.filter(ativo=True)[:3])
+        self.assertEqual(len(mercados), 3)
+        for indice, supermercado in enumerate(mercados):
+            oferta = OfertaFonte.objects.create(
+                produto=produto,
+                supermercado=supermercado,
+                codigo_externo=str(indice),
+                nome_externo=produto.nome,
+                url_fonte="https://example.com/produto",
+                ativo=True,
+            )
+            Preco.objects.create(
+                oferta_fonte=oferta,
+                valor=10 + indice,
+                data_hora_coleta=timezone.now(),
+            )
+
+        resposta = self.client.get(
+            "/api/v1/produtos/",
+            {"q": "Biscoito experimental", "min_redes": "3"},
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(len(resposta.data), 1)
+        self.assertEqual(resposta.data[0]["id"], produto.id)
+        self.assertEqual(resposta.data[0]["quantidade_redes"], 3)
+
+    def test_filtro_com_numero_de_redes_invalido_retorna_400(self):
+        resposta = self.client.get(
+            "/api/v1/produtos/", {"min_redes": "4"}
+        )
+        self.assertEqual(resposta.status_code, 400)
+
+    def test_priorizacao_por_redes_sem_alterar_ordem_padrao(self):
+        from django.utils import timezone
+        from catalogo.models import Supermercado
+        from precos.models import OfertaFonte, Preco
+
+        isolado = Produto.objects.create(
+            nome="A Experimental isolado",
+            codigo_barras="7891234567002",
+        )
+        comparavel = Produto.objects.create(
+            nome="Z Experimental completo",
+            codigo_barras="7891234567003",
+        )
+        mercados = list(Supermercado.objects.filter(ativo=True)[:3])
+        for indice, supermercado in enumerate(mercados):
+            for produto in ([isolado, comparavel] if indice == 0 else [comparavel]):
+                oferta = OfertaFonte.objects.create(
+                    produto=produto, supermercado=supermercado,
+                    codigo_externo=str(indice),
+                    nome_externo=produto.nome,
+                    url_fonte="https://example.com/preco",
+                    ativo=True,
+                )
+                Preco.objects.create(
+                    oferta_fonte=oferta, valor=10 + indice,
+                    data_hora_coleta=timezone.now(),
+                )
+
+        normal = self.client.get(
+            "/api/v1/produtos/", {"q": "Experimental"}
+        )
+        priorizado = self.client.get(
+            "/api/v1/produtos/",
+            {"q": "Experimental", "priorizar_redes": "1"},
+        )
+        self.assertEqual(
+            [produto["id"] for produto in normal.data],
+            [isolado.id, comparavel.id],
+        )
+        self.assertEqual(
+            [produto["id"] for produto in priorizado.data],
+            [comparavel.id, isolado.id],
+        )
+
+
 class SupermercadoListaTests(APITestCase):
     fixtures = ["dados_exemplo"]
 
