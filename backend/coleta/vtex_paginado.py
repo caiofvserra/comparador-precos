@@ -33,9 +33,14 @@ def _url_oficial(url, loja):
         return ""
     host = parsed.netloc.casefold()
     oficial = "atacadao.com.br" if loja == "Atacadão" else "savegnago.com.br"
-    if host not in (oficial, "www." + oficial):
+    permitidos = {oficial, "www." + oficial}
+    if loja == "Atacadão":
+        permitidos.add("secure.atacadao.com.br")
+    if host not in permitidos:
         return ""
-    return urlunparse(parsed._replace(netloc="www." + oficial))
+    # Preserva o domínio real da fonte para o link de comprovação da oferta.
+    destino = host if host == "secure.atacadao.com.br" else "www." + oficial
+    return urlunparse(parsed._replace(netloc=destino))
 
 
 def _amostra_diagnostico(dados, loja, termo):
