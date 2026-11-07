@@ -13,9 +13,12 @@ from precos.models import OfertaFonte, Preco
 
 
 TERMOS_ATACADAO = ("arroz", "leite", "café")
-TERMOS_CARREFOUR = ("arroz", "feijão", "leite", "café")
+TERMOS_CARREFOUR = ("arroz", "feijão", "leite", "café", "macarrão", "detergente")
+TERMOS_CARREFOUR_ESPECIFICOS = ("broto legal", "ypê", "pilão", "galo", "renata")
 CEP_REFERENCIA = "14010000"
 LIMITE_POR_CONSULTA = 10
+LIMITE_CARREFOUR = 30
+LIMITE_CARREFOUR_ESPECIFICO = 10
 MINIMO_POR_TERMO = 3
 
 
@@ -104,7 +107,7 @@ class Command(BaseCommand):
                 call_command(
                     "atualizar_precos_carrefour",
                     termo=termo,
-                    quantidade=LIMITE_POR_CONSULTA,
+                    quantidade=LIMITE_CARREFOUR,
                     gravar=True,
                     stdout=self.stdout,
                     stderr=self.stderr,
@@ -113,6 +116,25 @@ class Command(BaseCommand):
                 self.stderr.write(
                     self.style.WARNING(
                         f"[comparacao] Falha na consulta Carrefour {termo}: {erro}"
+                    )
+                )
+
+        # Busca marcas populares para aumentar a interseção entre lojas.
+        # O importador só grava preços de EANs presentes no catálogo.
+        for termo in TERMOS_CARREFOUR_ESPECIFICOS:
+            try:
+                call_command(
+                    "atualizar_precos_carrefour",
+                    termo=termo,
+                    quantidade=LIMITE_CARREFOUR_ESPECIFICO,
+                    gravar=True,
+                    stdout=self.stdout,
+                    stderr=self.stderr,
+                )
+            except Exception as erro:
+                self.stderr.write(
+                    self.style.WARNING(
+                        f"[comparacao] Falha na busca específica Carrefour {termo}: {erro}"
                     )
                 )
 
