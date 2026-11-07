@@ -41,6 +41,24 @@ Ela não substitui as rotinas de importação e atualização do catálogo.
 
 A API `GET /api/v1/configuracao/` retorna o modo usado para o filtro inicial da interface. `GET /api/v1/produtos/` sem parâmetros continua retornando o catálogo completo, ordenado pelo nome, independentemente do modo.
 
+### Ampliação da amostra comparável na demonstração
+
+O comando `expandir_trios` é um coletor **pontual para demonstração** que
+varre vários resultados e todos os SKUs públicos do Savegnago e Atacadão.
+Somente EANs presentes nas duas redes são procurados no Carrefour e
+**nenhum preço é criado sem origem e disponibilidade confirmadas**.
+
+- Diagnóstico: `python backend/manage.py expandir_trios --lote 1`
+- Coleta: `python backend/manage.py expandir_trios --lote 1 --gravar`
+- Lotes adicionais: `--lote 2` e `--lote 3`, com categorias e marcas distintas.
+
+No Render, executar uma vez com `BOOTSTRAP_EXPANDIR_TRIOS=true` e
+`TRIOS_LOTE=1` (ou 2/3) e depois voltar a flag para `false`. A rotina
+se inicia após a aplicação subir e não cria cron ou serviço pago.
+A quantidade de itens com preços nas três redes depende do que as fontes
+realmente disponibilizam; a coleta não garante um total específico. O
+catálogo e os coletores gerais continuam independentes desse procedimento.
+
 📌 Sobre o projeto
 
 O Comparador de Preços de Supermercados é uma aplicação web desenvolvida para facilitar a pesquisa de produtos, a comparação de preços e o planejamento de compras.
