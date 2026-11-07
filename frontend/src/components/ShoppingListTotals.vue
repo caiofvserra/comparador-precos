@@ -236,6 +236,13 @@ function selectMarket(marketId: number) {
               :aria-pressed="selectedDetailMarket?.supermercado.id === result.supermercado.id"
               @click="selectMarket(result.supermercado.id)"
             >Ver detalhes <span aria-hidden="true">→</span></button>
+            <a
+              v-if="result.supermercado.site_url"
+              class="market-site-link"
+              :href="result.supermercado.site_url"
+              target="_blank"
+              rel="noopener noreferrer"
+            >Ir para o site do supermercado <span aria-hidden="true">↗</span></a>
           </article>
         </div>
 
@@ -404,6 +411,13 @@ function selectMarket(marketId: number) {
             </div>
           </div>
           <footer class="market-card-footer"><span>{{ result.status === 'completo' ? 'Total estimado' : 'Total parcial' }}</span><strong>{{ formatPrice(result.total) }}</strong></footer>
+          <a
+            v-if="result.supermercado.site_url"
+            class="market-site-link"
+            :href="result.supermercado.site_url"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Ir para o site do supermercado <span aria-hidden="true">↗</span></a>
         </article>
       </div>
       <button
@@ -1509,6 +1523,22 @@ function selectMarket(marketId: number) {
     padding: 18px;
   }
 }
+
+.market-site-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 10px;
+  color: #087c59;
+  font-size: 10px;
+  font-weight: 750;
+  text-decoration: none;
+}
+.market-site-link:hover {
+  text-decoration: underline;
+}
+
 </style>
 
 <style>
