@@ -16,6 +16,18 @@
   <img src="https://img.shields.io/badge/PostgreSQL-Database-4169e1?logo=postgresql&logoColor=white" alt="PostgreSQL">
 </p>
 
+🚀 Deploy público no Render
+
+O repositório possui um `render.yaml` que cria:
+
+- uma aplicação web full-stack no plano gratuito;
+- um PostgreSQL gratuito;
+- frontend Vue e API Django no mesmo endereço público.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/caiofvserra/comparador-precos)
+
+Após o primeiro deploy, o banco inicia vazio. Execute/importa a coleta de dados antes da demonstração para preencher produtos e preços reais.
+
 📌 Sobre o projeto
 
 O Comparador de Preços de Supermercados é uma aplicação web desenvolvida para facilitar a pesquisa de produtos, a comparação de preços e o planejamento de compras.
