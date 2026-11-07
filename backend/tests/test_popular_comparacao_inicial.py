@@ -118,6 +118,37 @@ class PopularComparacaoInicialTests(TestCase):
         self.assertEqual(OfertaFonte.objects.count(), 1)
         self.assertEqual(Preco.objects.count(), 1)
 
+    def test_carrefour_nao_aumenta_catalogo_com_produto_sem_comparacao(self):
+        item_sem_correspondencia = {
+            "nome": "Arroz de outra marca 5 kg",
+            "marca": "Outra Marca",
+            "codigo_barras": "7891234567008",
+            "sku": "outro-123",
+            "preco": "17.90",
+            "disponivel": True,
+            "url": "https://mercado.carrefour.com.br/produto/outro-arroz",
+        }
+        with (
+            patch(
+                "coleta.management.commands.importar_atacadao.buscar_produtos",
+                return_value=[],
+            ),
+            patch(
+                "coleta.management.commands.atualizar_precos_carrefour.buscar_produtos",
+                return_value=[item_sem_correspondencia],
+            ) as busca_carrefour,
+        ):
+            call_command(
+                "popular_comparacao_inicial",
+                stdout=StringIO(),
+                stderr=StringIO(),
+            )
+
+        self.assertGreaterEqual(busca_carrefour.call_count, 6)
+        self.assertEqual(Produto.objects.count(), 1)
+        self.assertEqual(OfertaFonte.objects.count(), 1)
+        self.assertEqual(Preco.objects.count(), 1)
+
     def test_nao_consulta_sem_produtos_savegnago(self):
         Produto.objects.all().delete()
         with patch(
