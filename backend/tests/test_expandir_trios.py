@@ -67,6 +67,15 @@ class VtexPaginadoTests(TestCase):
         self.assertEqual(len(produtos), 3)
         self.assertEqual(sessao.get.call_count, 2)
 
+    def test_aceita_vendedor_com_acento_e_dominio_sem_www(self):
+        bruto = produto_vtex()
+        bruto["items"][0]["sellers"][0]["sellerName"] = "Atacadão"
+        bruto["link"] = "https://atacadao.com.br/biscoito/p"
+        produtos = extrair_skus([bruto], "Atacadão")
+        self.assertEqual(list(produtos), [EAN])
+        self.assertEqual(produtos[EAN]["url"],
+                         "https://www.atacadao.com.br/biscoito/p")
+
     def test_nao_aceita_vendedor_diferente(self):
         bruto = produto_vtex()
         bruto["items"][0]["sellers"][0]["sellerName"] = "OUTRA LOJA"
