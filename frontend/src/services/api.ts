@@ -40,7 +40,7 @@ export type SupermarketResult = {
 }
 export type Simulation = { total_itens: number; supermercados: SupermarketResult[] }
 
-export const isDemoData = !import.meta.env.VITE_API_URL
+export const isDemoData = import.meta.env.VITE_DEMO_MODE === 'true'
 
 const supermarkets: Supermarket[] = [
   { id: 1, nome: 'Atacadão', site_url: 'https://www.atacadao.com.br/' },
@@ -131,7 +131,7 @@ const comparisons: Record<number, Comparison> = Object.fromEntries(
   ].map((comparison) => [comparison.produto.id, comparison]),
 )
 
-const apiBase = import.meta.env.VITE_API_URL?.replace(/\/+$/, '')
+const apiBase = import.meta.env.VITE_API_URL?.replace(/\/+$/, '') ?? ''
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBase}${path}`, {
