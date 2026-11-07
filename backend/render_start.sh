@@ -6,7 +6,14 @@ python manage.py migrate --noinput
 # Prioriza a subida do Gunicorn e o health check. A coleta começa
 # somente depois de uma pequena espera, em um único subprocesso.
 # A importação multirrede depende de habilitação explícita.
-if [ "${BOOTSTRAP_TRIANGULACAO:-false}" = "true" ]; then
+if [ "${BOOTSTRAP_TRIANGULACAO_EAN:-false}" = "true" ]; then
+  (
+    sleep 25
+    echo "[trio-ean] Executando busca direta e regionalizada por EAN."
+    python -u manage.py validar_trios_por_ean --gravar ||
+      echo "[trio-ean] Consulta incompleta; servidor preservado."
+  ) &
+elif [ "${BOOTSTRAP_TRIANGULACAO:-false}" = "true" ]; then
   (
     sleep 25
     echo "[triangulacao] Iniciando coleta controlada de preços nas três redes."
