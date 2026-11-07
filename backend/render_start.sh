@@ -6,7 +6,14 @@ python manage.py migrate --noinput
 # Prioriza a subida do Gunicorn e o health check. A coleta começa
 # somente depois de uma pequena espera, em um único subprocesso.
 # A importação multirrede depende de habilitação explícita.
-if [ "${BOOTSTRAP_COMPARACAO:-false}" = "true" ]; then
+if [ "${BOOTSTRAP_TRIANGULACAO:-false}" = "true" ]; then
+  (
+    sleep 25
+    echo "[triangulacao] Iniciando coleta controlada de preços nas três redes."
+    python -u manage.py triangular_precos --gravar ||
+      echo "[triangulacao] Coleta não concluída; site preservado."
+  ) &
+elif [ "${BOOTSTRAP_COMPARACAO:-false}" = "true" ]; then
   (
     sleep 25
     echo "[bootstrap] Piloto multimercado iniciado depois da subida do site."
