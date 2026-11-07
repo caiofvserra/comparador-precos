@@ -6,7 +6,14 @@ python manage.py migrate --noinput
 # Prioriza a subida do Gunicorn e o health check. A coleta começa
 # somente depois de uma pequena espera, em um único subprocesso.
 # A importação multirrede depende de habilitação explícita.
-if [ "${BOOTSTRAP_TRIANGULACAO_EAN:-false}" = "true" ]; then
+if [ "${BOOTSTRAP_EXPANDIR_TRIOS:-false}" = "true" ]; then
+  (
+    sleep 25
+    echo "[expansao] Lote ${TRIOS_LOTE:-1}: varredura de SKUs reais nas 3 redes."
+    python -u manage.py expandir_trios --gravar --lote "${TRIOS_LOTE:-1}" ||
+      echo "[expansao] Coleta incompleta; site preservado."
+  ) &
+elif [ "${BOOTSTRAP_TRIANGULACAO_EAN:-false}" = "true" ]; then
   (
     sleep 25
     echo "[trio-ean] Executando busca direta e regionalizada por EAN."
