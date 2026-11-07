@@ -41,7 +41,14 @@ export type SupermarketResult = {
 }
 export type Simulation = { total_itens: number; supermercados: SupermarketResult[] }
 
+// Modo ilustrativo com mocks é diferente da apresentação com preços reais.
+// No Render, a configuração para priorizar trios vem do Django em tempo de execução.
 export const isDemoData = import.meta.env.VITE_DEMO_MODE === 'true'
+
+export type CatalogConfig = {
+  modo: 'completo' | 'triangulacao'
+  min_redes_padrao: 0 | 3
+}
 
 const supermarkets: Supermarket[] = [
   { id: 1, nome: 'Atacadão', site_url: 'https://www.atacadao.com.br/' },
@@ -141,6 +148,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   })
   if (!response.ok) throw new Error(`Não foi possível carregar os dados (${response.status}).`)
   return response.json() as Promise<T>
+}
+
+export async function getCatalogConfig(): Promise<CatalogConfig> {
+  return request('/api/v1/configuracao/')
 }
 
 export async function getProducts(
