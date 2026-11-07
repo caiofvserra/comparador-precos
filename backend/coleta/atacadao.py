@@ -127,6 +127,13 @@ def buscar_produtos(termo="leite", quantidade=10, cep="14010000"):
             if ean == "0":
                 ean = ""
 
+            imagens = item.get("images") or []
+            imagem_url = (
+                str(imagens[0].get("imageUrl") or "").strip()
+                if imagens and isinstance(imagens[0], dict)
+                else ""
+            )
+
             produtos.append({
                 "id_externo": product_id,
                 "sku": str(item.get("itemId") or ""),
@@ -138,6 +145,7 @@ def buscar_produtos(termo="leite", quantidade=10, cep="14010000"):
                 "preco": oferta.get("Price"),
                 "disponivel": disponivel,
                 "url": produto.get("link") or "",
+                "imagem_url": imagem_url,
             })
 
             if len(produtos) >= quantidade:
