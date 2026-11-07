@@ -180,3 +180,45 @@ class ValidarTriosPorEANTests(TestCase):
             max_eans=2, max_buscas_carrefour=0, stdout=StringIO()
         )
         self.assertEqual(Preco.objects.count(), 2)
+
+class DescobertaNoCarrefourTests(TestCase):
+    @patch("coleta.management.commands.validar_trios_por_ean.sessao_savegnago")
+    @patch("coleta.management.commands.validar_trios_por_ean.sessao_atacadao")
+    @patch("coleta.management.commands.validar_trios_por_ean.buscar_carrefour")
+    @patch("coleta.management.commands.validar_trios_por_ean.buscar_ean")
+    def test_salva_produto_novo_somente_com_tres_precos(
+        self, buscar_ean_mock, buscar_carrefour_mock, sessao_atacadao_mock,
+        sessao_savegnago_mock,
+    ):
+        buscar_carrefour_mock.return_value = [item("Carrefour")]
+        buscar_ean_mock.side_effect = (
+            lambda loja, ean, sessao: item(loja, ean)
+        )
+        call_command(
+            "validar_trios_por_ean", gravar=True, max_eans=1,
+            max_buscas_carrefour=4, stdout=StringIO()
+        )
+        self.assertEqual(Produto.objects.count(), 1)
+        self.assertEqual(Supermercado.objects.count(), 3)
+        self.assertEqual(OfertaFonte.objects.count(), 3)
+        self.assertEqual(Preco.objects.count(), 3)
+
+    @patch("coleta.management.commands.validar_trios_por_ean.sessao_savegnago")
+    @patch("coleta.management.commands.validar_trios_por_ean.sessao_atacadao")
+    @patch("coleta.management.commands.validar_trios_por_ean.buscar_carrefour")
+    @patch("coleta.management.commands.validar_trios_por_ean.buscar_ean")
+    def test_uma_rede_sem_ean_nao_cadastra_item(
+        self, buscar_ean_mock, buscar_carrefour_mock, sessao_atacadao_mock,
+        sessao_savegnago_mock,
+    ):
+        buscar_carrefour_mock.return_value = [item("Carrefour")]
+        buscar_ean_mock.side_effect = (
+            lambda loja, ean, sessao: item(loja, ean)
+            if loja == "Savegnago" else None
+        )
+        call_command(
+            "validar_trios_por_ean", gravar=True, max_eans=1,
+            max_buscas_carrefour=4, stdout=StringIO()
+        )
+        self.assertEqual(Produto.objects.count(), 0)
+        self.assertEqual(Preco.objects.count(), 0)
