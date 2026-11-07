@@ -59,7 +59,7 @@ Requisitos: Python 3.11+ e PostgreSQL.
 python manage.py test
 ```
 
-Os testes ficam em `tests/` (um arquivo por endpoint) e cobrem os casos CT-01 a CT-07 do plano de testes.
+Os testes ficam em `tests/` e cobrem os casos funcionais do backend, incluindo CT-01 a CT-08 do plano de testes. O CT-09 (uso em celular) é validado no frontend por teste visual/responsivo.
 
 ## Estrutura
 
@@ -69,7 +69,7 @@ backend/
 ├── catalogo/     # Supermercado, Categoria, Produto + busca e lista de supermercados
 ├── precos/       # OfertaFonte, Preco + comparação e histórico
 ├── simulacao/    # cálculo da lista de compras
-├── coleta/       # coletores (área de dados; ainda vazio)
+├── coleta/       # integração com Savegnago, Atacadão e Carrefour
 └── tests/        # testes da API
 ```
 
@@ -132,3 +132,21 @@ Pontos que a especificação não fechava e que precisam ir para o `docs/api.md`
 
 6. **Simulação – erros de entrada.** Lista vazia, quantidade fora do intervalo
    1 a 1000 ou `produto_id` inexistente retornam `400` com a mensagem do campo.
+
+
+## Coleta e atualização de preços
+
+As integrações estão em `coleta/` e podem ser executadas em modo de simulação ou gravação.
+
+Atualização conjunta das três redes:
+
+```bash
+python manage.py atualizar_precos_todos --cep 14010000
+python manage.py atualizar_precos_todos --cep 14010000 --gravar
+```
+
+Também permanecem disponíveis os comandos individuais de Savegnago, Atacadão e Carrefour. O histórico de preços não é sobrescrito: um novo registro é criado apenas quando o valor muda.
+
+## Integração contínua
+
+O workflow `.github/workflows/ci.yml` executa automaticamente os testes do backend com PostgreSQL e o build do frontend em Pull Requests e pushes para a `main`.
