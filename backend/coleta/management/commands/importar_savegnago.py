@@ -37,17 +37,22 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR("A quantidade deve estar entre 1 e 50."))
             return
 
-        supermercado, _ = Supermercado.objects.get_or_create(
-            nome="Savegnago",
-            defaults={
-                "endereco": "",
-                "complemento": "",
-                "cidade": "Ribeirão Preto",
-                "estado": "SP",
-                "site_url": "https://www.savegnago.com.br",
-                "ativo": True,
-            },
-        )
+        if gravar:
+            supermercado, _ = Supermercado.objects.get_or_create(
+                nome="Savegnago",
+                defaults={
+                    "endereco": "",
+                    "complemento": "",
+                    "cidade": "Ribeirão Preto",
+                    "estado": "SP",
+                    "site_url": "https://www.savegnago.com.br",
+                    "ativo": True,
+                },
+            )
+        else:
+            supermercado = Supermercado.objects.filter(
+                nome__iexact="Savegnago"
+            ).first()
 
         self.stdout.write(f"Consultando Savegnago para o CEP {cep}...")
 
@@ -85,6 +90,7 @@ class Command(BaseCommand):
                     marca = (item.get("marca") or "").strip()
                     ean = (item.get("codigo_barras") or "").strip()
                     url = (item.get("url") or "").strip()
+                    imagem_url = (item.get("imagem_url") or "").strip()
 
                     vendedor_id = (item.get("vendedor_id") or "").strip()
                     vendedor_nome = (
@@ -123,6 +129,10 @@ class Command(BaseCommand):
                     oferta = None
 
                     if produto:
+                        if gravar and imagem_url and not produto.imagem_url:
+                            produto.imagem_url = imagem_url
+                            produto.save(update_fields=["imagem_url"])
+
                         oferta = OfertaFonte.objects.filter(
                             produto=produto,
                             supermercado=supermercado,
@@ -161,7 +171,7 @@ class Command(BaseCommand):
                             nome=nome,
                             marca=marca,
                             codigo_barras=ean,
-                            imagem_url=item.get("imagem_url") or None,
+                            imagem_url=imagem_url or None,
                         )
                         
                     if oferta is None:
