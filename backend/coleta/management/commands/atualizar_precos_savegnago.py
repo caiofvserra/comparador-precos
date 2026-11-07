@@ -159,6 +159,16 @@ class Command(BaseCommand):
                     )
                 continue
 
+            imagens = item_encontrado.get("images") or []
+            imagem_url = (
+                str(imagens[0].get("imageUrl") or "").strip()
+                if imagens and isinstance(imagens[0], dict)
+                else ""
+            )
+            if gravar and imagem_url and not produto.imagem_url:
+                produto.imagem_url = imagem_url
+                produto.save(update_fields=["imagem_url"])
+
             comercial = (
                 vendedor_encontrado.get("commertialOffer") or {}
             )
