@@ -4,6 +4,10 @@ A busca antiga inspecionava somente o primeiro SKU de cada produto. Este
 módulo considera cada SKU com EAN, vendedor e oferta válida, sem gravar nada.
 """
 
+import os
+import unicodedata
+from urllib.parse import urlparse, urlunparse
+
 from coleta.atacadao import URL_BUSCA as ATACADAO_URL
 from coleta.savegnago import URL_BUSCA as SAVEGNAGO_URL
 from coleta.management.commands.triangular_precos import normalizar_oferta
@@ -16,6 +20,57 @@ URLS = {
 VENDEDORES = {"Savegnago": "SAVEGNAGO", "Atacadão": "ATACADAO"}
 
 
+def _ascii_maiusculo(texto):
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", str(texto or ""))
+        if not unicodedata.combining(c)
+    ).upper()
+
+
+def _url_oficial(url, loja):
+    parsed = urlparse(str(url or ""))
+    if parsed.scheme != "https":
+        return ""
+    host = parsed.netloc.casefold()
+    oficial = "atacadao.com.br" if loja == "Atacadão" else "savegnago.com.br"
+    if host not in (oficial, "www." + oficial):
+        return ""
+    return urlunparse(parsed._replace(netloc="www." + oficial))
+
+
+def _amostra_diagnostico(dados, loja, termo):
+    if loja != "Atacadão" or os.environ.get("VTEX_DIAGNOSTICO") != "true":
+        return
+    diagnosticos = []
+    for produto in dados[:2]:
+        itens = produto.get("items") or []
+        diagnosticos.append({
+            "host_link": urlparse(produto.get("link") or "").netloc,
+            "qtd_skus": len(itens),
+            "skus": [
+                {
+                    "ean_preenchido": bool(str(sku.get("ean") or "").strip()),
+                    "vendedores": [
+                        {
+                            "nome": vendedor.get("sellerName"),
+                            "disponivel": (vendedor.get("commertialOffer") or {}).get(
+                                "IsAvailable"
+                            ),
+                            "estoque": (vendedor.get("commertialOffer") or {}).get(
+                                "AvailableQuantity"
+                            ),
+                            "preco_preenchido": (
+                                (vendedor.get("commertialOffer") or {}).get("Price") is not None
+                            ),
+                        }
+                        for vendedor in (sku.get("sellers") or [])[:3]
+                    ],
+                } for sku in itens[:2]
+            ],
+        })
+    print(f"[vtex-diagnostico] Atacadão {termo}: {diagnosticos}", flush=True)
+
+
 def extrair_skus(produtos, loja):
     """Devolve todas as variantes disponíveis, não só items[0]."""
     if loja not in URLS:
@@ -24,15 +79,15 @@ def extrair_skus(produtos, loja):
     for produto in produtos:
         if not isinstance(produto, dict):
             continue
-        url = str(produto.get("link") or "").strip()
+        url = _url_oficial(produto.get("link"), loja)
         for sku in produto.get("items") or []:
             if not isinstance(sku, dict):
                 continue
             vendedores = sku.get("sellers") or []
             for vendedor in vendedores:
-                if VENDEDORES[loja] not in str(
-                    vendedor.get("sellerName") or ""
-                ).upper():
+                if VENDEDORES[loja] not in _ascii_maiusculo(
+                    vendedor.get("sellerName")
+                ):
                     continue
                 oferta = vendedor.get("commertialOffer") or {}
                 if (
@@ -50,7 +105,9 @@ def extrair_skus(produtos, loja):
                     "marca": produto.get("brand") or "",
                     "codigo_barras": sku.get("ean"),
                     "sku": sku.get("itemId"),
-                    "vendedor_nome": vendedor.get("sellerName") or "",
+                    "vendedor_nome": _ascii_maiusculo(
+                        vendedor.get("sellerName")
+                    ),
                     "preco": oferta.get("Price"),
                     "disponivel": True,
                     "url": url,
@@ -86,6 +143,8 @@ def buscar_paginado(loja, termo, sessao, paginas=3, tamanho=30):
             raise ValueError("Catálogo VTEX retornou formato inválido.")
         if not dados:
             break
+        if pagina == 0:
+            _amostra_diagnostico(dados, loja, termo)
         ofertas.update(extrair_skus(dados, loja))
         if len(dados) < tamanho:
             break
