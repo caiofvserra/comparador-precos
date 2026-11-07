@@ -3,13 +3,20 @@ set -e
 
 python manage.py migrate --noinput
 
-# A coleta inicial é opcional e acontece em paralelo ao servidor.
-# Não criamos cron pago nem bloqueamos o health check do serviço gratuito.
-if [ "${BOOTSTRAP_SAVEGNAGO:-false}" = "true" ]; then
+# Importações opcionais em série, sem bloquear a disponibilidade do site.
+# O piloto multimercado é ativado somente sob BOOTSTRAP_COMPARACAO=true.
+if [ "${BOOTSTRAP_SAVEGNAGO:-false}" = "true" ] || [ "${BOOTSTRAP_COMPARACAO:-false}" = "true" ]; then
   (
-    echo "[bootstrap] Coleta inicial iniciada em segundo plano."
-    python manage.py popular_catalogo_inicial ||
-      echo "[bootstrap] Falha na coleta inicial; aplicação web preservada."
+    if [ "${BOOTSTRAP_SAVEGNAGO:-false}" = "true" ]; then
+      echo "[bootstrap] Validando catálogo inicial Savegnago."
+      python -u manage.py popular_catalogo_inicial ||
+        echo "[bootstrap] Falha no Savegnago; servidor continua disponível."
+    fi
+    if [ "${BOOTSTRAP_COMPARACAO:-false}" = "true" ]; then
+      echo "[bootstrap] Iniciando piloto de comparação multirrede."
+      python -u manage.py popular_comparacao_inicial ||
+        echo "[bootstrap] Falha na comparação; servidor continua disponível."
+    fi
   ) &
 fi
 
