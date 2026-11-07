@@ -23,6 +23,7 @@ const coverageOptions: { min: 0 | 2 | 3; label: string }[] = [
   { min: 0, label: 'Todos' },
 ]
 const coverageFilter = ref<0 | 2 | 3>(0)
+const configResolved = ref(isDemoData)
 const products = ref<Product[]>([])
 const router = useRouter()
 const {
@@ -147,11 +148,15 @@ function selectCoverage(min: 0 | 2 | 3) {
 
 function searchExample(query: string) {
   search.value = query
-  void searchProducts(query)
+  // O watcher faz a consulta uma única vez, sem repetir requisições.
 }
 
 watch(search, () => {
   clearTimeout(searchTimer)
+  // Invalida imediatamente resultados de consultas antigas durante a digitação.
+  searchSequence += 1
+  loadingProducts.value = true
+  productsError.value = ''
   searchTimer = setTimeout(() => void searchProducts(), 220)
 })
 
@@ -163,6 +168,8 @@ onMounted(async () => {
     } catch {
       // Sem a configuração da demonstração, preserva catálogo completo.
       coverageFilter.value = 0
+    } finally {
+      configResolved.value = true
     }
     await searchProducts()
     return
@@ -230,27 +237,31 @@ onMounted(async () => {
               <div>
                 <p class="mvp-eyebrow">CATÁLOGO</p>
                 <h2 id="results-title">
-                  {{ visibleProducts.length }}
-                  {{ visibleProducts.length === 1 ? 'produto encontrado' : 'produtos encontrados'
-                  }}<span v-if="search"> para “{{ search }}”</span>
+                  <template v-if="loadingProducts || !configResolved">Produtos</template>
+                  <template v-else>
+                    {{ visibleProducts.length }}
+                    {{ visibleProducts.length === 1 ? 'produto encontrado' : 'produtos encontrados'
+                    }}<span v-if="search"> para “{{ search }}”</span>
+                  </template>
                 </h2>
               </div>
-              <span v-if="loadingProducts" class="mvp-inline-state">Buscando…</span>
             </div>
-            <div v-if="!isDemoData" class="mvp-coverage-filter" aria-label="Disponibilidade nos supermercados">
+            <div v-if="!isDemoData && configResolved" class="mvp-coverage-filter" aria-label="Disponibilidade nos supermercados">
               <span>Comparar preços em:</span>
-              <button
-                v-for="option in coverageOptions"
-                :key="option.min"
-                type="button"
-                :class="{ active: coverageFilter === option.min }"
-                :aria-pressed="coverageFilter === option.min"
-                @click="selectCoverage(option.min)"
-              >
-                {{ option.label }}
-              </button>
+              <div class="mvp-coverage-options" role="group" aria-label="Quantidade de supermercados">
+                <button
+                  v-for="option in coverageOptions"
+                  :key="option.min"
+                  type="button"
+                  :class="{ active: coverageFilter === option.min }"
+                  :aria-pressed="coverageFilter === option.min"
+                  @click="selectCoverage(option.min)"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
             </div>
-            <p v-if="!isDemoData && coverageFilter === 3" class="mvp-coverage-note">
+            <p v-if="!isDemoData && configResolved && coverageFilter === 3" class="mvp-coverage-note">
               Mostrando apenas produtos com preços cadastrados em Atacadão, Savegnago e Carrefour.
             </p>
             <p v-if="hasCatalogFilters" class="mvp-filter-summary">
@@ -263,8 +274,8 @@ onMounted(async () => {
               <button type="button" @click="clearFilters">Remover filtros</button>
             </p>
             <p v-if="productsError" class="mvp-error" role="alert">{{ productsError }}</p>
-            <div v-else-if="loadingProducts && !products.length" class="mvp-state">
-              Carregando produtos…
+            <div v-else-if="loadingProducts || !configResolved" class="mvp-state" role="status" aria-live="polite">
+              Atualizando resultados…
             </div>
             <div v-else-if="!visibleProducts.length" class="mvp-state mvp-empty">
               <span aria-hidden="true">⌕</span><strong>Nenhum produto encontrado</strong
@@ -587,13 +598,23 @@ onMounted(async () => {
   gap: 7px;
   margin-bottom: 8px;
 }
+.mvp-coverage-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 7px;
+  max-width: 100%;
+  overflow-x: auto;
+}
 .mvp-coverage-filter > span {
   margin-right: 4px;
   color: #557164;
   font-size: 11px;
   font-weight: 700;
 }
-.mvp-coverage-filter > button {
+.mvp-coverage-options > button {
+  flex: 0 0 auto;
+  white-space: nowrap;
   padding: 7px 10px;
   border: 1px solid #d4e5da;
   border-radius: 8px;
@@ -603,7 +624,7 @@ onMounted(async () => {
   font-weight: 700;
   cursor: pointer;
 }
-.mvp-coverage-filter > button.active {
+.mvp-coverage-options > button.active {
   border-color: #087c59;
   background: #e5f5eb;
   color: #075b42;
@@ -712,6 +733,16 @@ onMounted(async () => {
   }
   .mvp-filter-heading {
     min-height: 34px;
+  }
+}
+@media (max-width: 520px) {
+  .mvp-coverage-filter {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .mvp-coverage-options {
+    width: 100%;
   }
 }
 @media (max-width: 520px) {
