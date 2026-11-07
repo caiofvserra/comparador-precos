@@ -28,6 +28,19 @@ O repositório possui um `render.yaml` que cria:
 
 Após o primeiro deploy, o banco inicia vazio. Execute/importa a coleta de dados antes da demonstração para preencher produtos e preços reais.
 
+## Modos de apresentação e coleta
+
+**A triangulação é temporária para o Render da demonstração acadêmica.**
+Ela não substitui as rotinas de importação e atualização do catálogo.
+
+- **Apresentação no Render:** `CATALOGO_MODO=triangulacao` (definido em `render.yaml`) faz a busca abrir mostrando somente itens com preços cadastrados em três supermercados. Os filtros `2 ou mais` e `Todos` continuam disponíveis. A coleta não acontece automaticamente por causa dessa variável.
+- **Aplicação normal:** sem `CATALOGO_MODO` ou com `CATALOGO_MODO=completo`, a busca mostra **todos os produtos** por padrão. O usuário ainda pode selecionar o filtro de duas ou três redes.
+- **Coleta real completa:** permanece independente da apresentação. O repositório conserva `importar_savegnago`, `importar_atacadao`, `atualizar_precos_savegnago`, `atualizar_precos_atacadao`, `atualizar_precos_carrefour` e `atualizar_precos_todos`. Os coletores de cada fonte possuem suas próprias condições de importação e atualização: o coletor do Carrefour, por exemplo, ainda só grava ofertas de EANs já cadastrados. Ampliar a cobertura dessa fonte é uma evolução futura.
+- **Triangulação pontual:** `validar_trios_por_ean --gravar` tenta encontrar preços do mesmo EAN nas três fontes e só persiste trios completos. Não é requisito para a coleta geral nem deve ser executado em toda inicialização.
+- **Sem valores fictícios no Render:** `VITE_DEMO_MODE=false` permanece. O modo `triangulacao` prioriza preços coletados reais, não os exemplos ilustrativos do frontend.
+
+A API `GET /api/v1/configuracao/` retorna o modo usado para o filtro inicial da interface. `GET /api/v1/produtos/` sem parâmetros continua retornando o catálogo completo, ordenado pelo nome, independentemente do modo.
+
 📌 Sobre o projeto
 
 O Comparador de Preços de Supermercados é uma aplicação web desenvolvida para facilitar a pesquisa de produtos, a comparação de preços e o planejamento de compras.
