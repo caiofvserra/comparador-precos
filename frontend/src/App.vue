@@ -9,7 +9,7 @@ import {
   searchCatalog,
   useShoppingList,
 } from './composables/useShoppingList'
-import { isDemoData, type Product } from './services/api'
+import { getCatalogConfig, isDemoData, type Product } from './services/api'
 
 const search = ref('')
 const brandSearch = ref('')
@@ -22,7 +22,7 @@ const coverageOptions: { min: 0 | 2 | 3; label: string }[] = [
   { min: 2, label: '2 ou mais' },
   { min: 0, label: 'Todos' },
 ]
-const coverageFilter = ref<0 | 2 | 3>(isDemoData ? 0 : 3)
+const coverageFilter = ref<0 | 2 | 3>(0)
 const products = ref<Product[]>([])
 const router = useRouter()
 const {
@@ -157,6 +157,13 @@ watch(search, () => {
 
 onMounted(async () => {
   if (!isDemoData) {
+    try {
+      const config = await getCatalogConfig()
+      coverageFilter.value = config.min_redes_padrao === 3 ? 3 : 0
+    } catch {
+      // Sem a configuração da demonstração, preserva catálogo completo.
+      coverageFilter.value = 0
+    }
     await searchProducts()
     return
   }
