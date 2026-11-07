@@ -99,6 +99,7 @@ class Command(BaseCommand):
         cache_carrefour = {}
         marcas_consultadas = set()
         trios_processados = set()
+        trios_confirmados = set()
 
         def consultar_por_ean(loja, ean):
             chave = (loja, ean)
@@ -202,7 +203,9 @@ class Command(BaseCommand):
             stats["trios_gravados"] += 1
 
         def processar(ean, ofertas):
-            if ean in trios_processados:
+            if ean in trios_confirmados:
+                return
+            if ean in trios_processados and "Carrefour" not in ofertas:
                 return
             trios_processados.add(ean)
 
@@ -226,6 +229,7 @@ class Command(BaseCommand):
                     ofertas["Carrefour"] = cache_carrefour[ean]
 
             if all(loja in ofertas for loja in LOJAS):
+                trios_confirmados.add(ean)
                 stats["trios_verificados"] += 1
                 self.stdout.write(
                     f"[trio-ean] CONFIRMADO {ean}: "
@@ -272,9 +276,11 @@ class Command(BaseCommand):
                 consultar_carrefour_por_marca(termo)
                 pesquisados = 0
                 for ean, item in list(cache_carrefour.items()):
-                    if ean in trios_processados:
+                    if ean in trios_confirmados:
                         continue
-                    processar(ean, {"Carrefour": item})
+                    contexto = dict(candidatos.get(ean, {}))
+                    contexto["Carrefour"] = item
+                    processar(ean, contexto)
                     pesquisados += 1
                     if pesquisados >= 6:
                         break
