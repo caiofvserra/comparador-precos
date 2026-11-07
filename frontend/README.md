@@ -1,48 +1,73 @@
-# comparador-precos
+# Frontend - Comparador de Preços
 
-This template should help get you started developing with Vue 3 in Vite.
+Interface web do Projeto Integrador II, desenvolvida com Vue 3, TypeScript, Vite e Vue Router.
 
-## Recommended IDE Setup
+## Requisitos
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- Node.js compatível com `package.json`
+- npm
+- Backend Django em execução para trabalhar com dados reais
 
-## Recommended Browser Setup
+## Configuração
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+Na pasta `frontend`:
 
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
+```bash
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+Copie o arquivo de ambiente:
 
-```sh
+```bash
+cp .env.example .env
+```
+
+No Windows:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Para consumir a API real:
+
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+Sem `VITE_API_URL`, a aplicação entra em modo demonstrativo com dados locais.
+
+## Desenvolvimento
+
+```bash
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+A aplicação fica normalmente em `http://localhost:5173/`.
 
-```sh
+## Build
+
+```bash
 npm run build
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+O comando executa a verificação de tipos e gera a versão otimizada para produção.
 
-```sh
-npm run lint
-```
+## Funcionalidades
+
+- pesquisa de produtos;
+- comparação de preços entre supermercados;
+- histórico de preços;
+- lista de compras temporária;
+- comparação dos totais por supermercado;
+- indicação de lista completa/incompleta;
+- links para as fontes e para os sites dos supermercados;
+- imagens reais da API quando disponíveis, com fallback ilustrativo;
+- layout responsivo para desktop e celular.
+
+## Dados
+
+Com a API configurada, o frontend utiliza os dados do PostgreSQL expostos pelo Django REST Framework. As imagens reais retornadas pela API têm prioridade sobre os fallbacks locais.
+
+## Validação
+
+O GitHub Actions executa `npm run build` automaticamente em Pull Requests e pushes para a `main`.
