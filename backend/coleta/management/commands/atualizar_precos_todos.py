@@ -17,7 +17,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         cep = options["cep"]
         gravar = options["gravar"]
-        registrar_observacoes = options["registrar_observacoes"]
+        registrar_observacoes = options.get("registrar_observacoes", False)
 
         comandos = [
             ("Savegnago", "atualizar_precos_savegnago", {"cep": cep}),
