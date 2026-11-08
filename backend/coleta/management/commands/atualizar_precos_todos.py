@@ -31,7 +31,8 @@ class Command(BaseCommand):
             self.stdout.write("")
             self.stdout.write(self.style.NOTICE(f"=== {nome} ==="))
             try:
-                call_command(comando, gravar=gravar, registrar_observacoes=registrar_observacoes, **kwargs)
+                extras = {"registrar_observacoes": True} if registrar_observacoes else {}
+                call_command(comando, gravar=gravar, **kwargs, **extras)
             except Exception as erro:
                 falhas.append((nome, erro))
                 self.stderr.write(
