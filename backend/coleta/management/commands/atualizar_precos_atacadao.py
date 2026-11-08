@@ -5,6 +5,7 @@ import requests
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
+from coleta.registro_diario import precisa_observar_hoje
 
 from precos.models import OfertaFonte, Preco
 from coleta.atacadao import criar_sessao, URL_BUSCA
@@ -15,6 +16,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--cep", default="14010000")
+        parser.add_argument("--registrar-observacoes", action="store_true", help="Registra leitura real diária mesmo sem alteração de valor.")
         parser.add_argument(
             "--gravar",
             action="store_true",
@@ -62,6 +64,7 @@ class Command(BaseCommand):
             "inalterados": 0,
             "alteracoes": 0,
             "gravados": 0,
+            "observacoes_diarias": 0,
             "falhas": 0,
         }
 
@@ -192,6 +195,15 @@ class Command(BaseCommand):
             ).first()
 
             if ultimo and ultimo.valor == preco:
+                if gravar and options["registrar_observacoes"] and precisa_observar_hoje(ultimo, agora):
+                    Preco.objects.create(
+                        oferta_fonte=oferta,
+                        valor=preco,
+                        data_hora_coleta=timezone.now(),
+                    )
+                    contagem["observacoes_diarias"] += 1
+                    self.stdout.write(f"OBSERVAÇÃO DO DIA — {produto.nome} | R$ {preco:.2f}")
+                    continue
                 contagem["inalterados"] += 1
                 self.stdout.write(
                     f"SEM ALTERAÇÃO — {produto.nome} | R$ {preco:.2f}"

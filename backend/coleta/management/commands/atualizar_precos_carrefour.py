@@ -3,6 +3,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
+from coleta.registro_diario import precisa_observar_hoje
 
 from catalogo.models import Produto
 from precos.models import OfertaFonte, Preco, Supermercado
@@ -24,6 +25,7 @@ class Command(BaseCommand):
         )
         parser.add_argument("--quantidade", type=int, default=15)
         parser.add_argument("--gravar", action="store_true")
+        parser.add_argument("--registrar-observacoes", action="store_true", help="Grava nova observacao diaria da fonte, mesmo sem alteracao.")
 
     def handle(self, *args, **options):
         ean_alvo = str(options["ean"] or "").strip()
@@ -104,6 +106,7 @@ class Command(BaseCommand):
             "ofertas_criadas": 0,
             "precos_criados": 0,
             "sem_alteracao": 0,
+            "observacoes_diarias": 0,
         }
 
         eans_processados = set()
@@ -245,6 +248,15 @@ class Command(BaseCommand):
                 ).order_by("-data_hora_coleta", "-id").first()
 
                 if ultimo_preco is not None and ultimo_preco.valor == preco:
+                    if gravar and options["registrar_observacoes"] and precisa_observar_hoje(ultimo_preco):
+                        Preco.objects.create(
+                            oferta_fonte=oferta,
+                            valor=preco,
+                            data_hora_coleta=timezone.now(),
+                        )
+                        contadores["observacoes_diarias"] += 1
+                        self.stdout.write(f"OBSERVAÇÃO DO DIA | Produto {produto.id} | R$ {preco:.2f}")
+                        continue
                     contadores["sem_alteracao"] += 1
                     self.stdout.write(
                         f"SEM ALTERAÇÃO | Produto {produto.id} | "
@@ -280,6 +292,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Ofertas criadas: {contadores['ofertas_criadas']}")
         self.stdout.write(f"Preços gravados: {contadores['precos_criados']}")
         self.stdout.write(f"Preços sem alteração: {contadores['sem_alteracao']}")
+        self.stdout.write(f"Observações do dia: {contadores['observacoes_diarias']}")
 
         if not gravar:
             self.stdout.write(self.style.WARNING(

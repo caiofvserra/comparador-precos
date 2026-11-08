@@ -6,7 +6,16 @@ python manage.py migrate --noinput
 # Prioriza a subida do Gunicorn e o health check. A coleta começa
 # somente depois de uma pequena espera, em um único subprocesso.
 # A importação multirrede depende de habilitação explícita.
-if [ "${BOOTSTRAP_EXPANDIR_TRIOS:-false}" = "true" ]; then
+# Recoleta unica de precos existentes para um dia especifico. Nao cria produtos.
+if [ "${BOOTSTRAP_RECOLETA_DIA:-}" != "" ] && \
+   [ "${BOOTSTRAP_RECOLETA_DIA}" = "$(date -u +%Y-%m-%d)" ]; then
+  (
+    sleep 25
+    echo "[recoleta] Iniciando observacao diaria de precos existentes ${BOOTSTRAP_RECOLETA_DIA}."
+    python -u manage.py atualizar_precos_todos --cep "14010000" --registrar-observacoes --gravar ||
+      echo "[recoleta] Atualizacao incompleta; banco e site preservados."
+  ) &
+elif [ "${BOOTSTRAP_EXPANDIR_TRIOS:-false}" = "true" ]; then
   (
     sleep 25
     echo "[expansao] Lote ${TRIOS_LOTE:-1}: varredura de SKUs reais nas 3 redes."
