@@ -7,6 +7,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--cep", default="14010000")
+        parser.add_argument("--registrar-observacoes", action="store_true", help="Registra precos consultados mesmo se inalterados, uma vez por dia.")
         parser.add_argument(
             "--gravar",
             action="store_true",
@@ -16,6 +17,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         cep = options["cep"]
         gravar = options["gravar"]
+        registrar_observacoes = options["registrar_observacoes"]
 
         comandos = [
             ("Savegnago", "atualizar_precos_savegnago", {"cep": cep}),
@@ -29,7 +31,7 @@ class Command(BaseCommand):
             self.stdout.write("")
             self.stdout.write(self.style.NOTICE(f"=== {nome} ==="))
             try:
-                call_command(comando, gravar=gravar, **kwargs)
+                call_command(comando, gravar=gravar, registrar_observacoes=registrar_observacoes, **kwargs)
             except Exception as erro:
                 falhas.append((nome, erro))
                 self.stderr.write(
