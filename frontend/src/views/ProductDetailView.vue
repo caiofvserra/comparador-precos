@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   getComparison,
@@ -39,6 +39,28 @@ let historyRequest = 0
 
 const storeColors = ['#178b51', '#d48742', '#c95252', '#5988a4', '#8c75a8']
 const failedSupermarketLogos = ref<string[]>([])
+const chartContainer = ref<HTMLElement | null>(null)
+const chartWidth = ref(760)
+let chartResizeObserver: ResizeObserver | null = null
+
+// Ajusta o SVG ao espaco real disponivel no cartao, sem rolagem horizontal.
+watch(chartContainer, (element) => {
+  chartResizeObserver?.disconnect()
+  chartResizeObserver = null
+  if (!element) return
+
+  const resizeChart = () => {
+    const availableWidth = Math.round(element.getBoundingClientRect().width)
+    if (availableWidth > 0) chartWidth.value = availableWidth
+  }
+  resizeChart()
+
+  if (typeof ResizeObserver !== 'undefined') {
+    chartResizeObserver = new ResizeObserver(resizeChart)
+    chartResizeObserver.observe(element)
+  }
+})
+onUnmounted(() => chartResizeObserver?.disconnect())
 
 const productName = computed(() => product.value?.nome?.replace(/\s+/g, ' ').trim() || 'Produto')
 const productBrand = computed(() => product.value?.marca || 'Marca não informada')
@@ -129,8 +151,11 @@ const historyChart = computed(() => {
   const minValue = Math.min(...values)
   const maxValue = Math.max(...values)
   const valueRange = maxValue - minValue || 1
-  const x = (timestamp: number) => 54 + ((timestamp - minDate) / (maxDate - minDate || 1)) * 675
-  const y = (value: number) => 164 - ((value - minValue) / valueRange) * 125
+  const chartLeft = 64
+  const chartRight = Math.max(chartLeft + 1, chartWidth.value - 16)
+  const x = (timestamp: number) =>
+    chartLeft + ((timestamp - minDate) / (maxDate - minDate || 1)) * (chartRight - chartLeft)
+  const y = (value: number) => 164 - ((value - minValue) / valueRange) * 140
   const groups = new Map<number, HistoryEntry[]>()
   records.forEach((entry) => {
     const group = groups.get(entry.supermercado.id) ?? []
@@ -155,7 +180,8 @@ const historyChart = computed(() => {
       ]),
     ).entries(),
   ]
-  const tickStep = Math.max(1, Math.ceil(ticks.length / 6))
+  const maxDateTicks = chartWidth.value < 410 ? 2 : chartWidth.value < 650 ? 4 : 6
+  const tickStep = Math.max(1, Math.ceil(ticks.length / maxDateTicks))
   const dateTicks = ticks
     .filter((_, index) => index % tickStep === 0 || index === ticks.length - 1)
     .map(([date, timestamp]) => ({
@@ -477,16 +503,16 @@ onMounted(() => void loadProduct())
               <h2 id="chart-title"><span aria-hidden="true">↗</span> Evolução do preço</h2>
               <span>{{ historyRecords.length }} registros</span>
             </div>
-            <div v-if="historyChart" class="pd-chart-scroll">
+            <div v-if="historyChart" ref="chartContainer" class="pd-chart-container">
               <svg
                 class="pd-chart"
-                viewBox="0 0 760 220"
+                 :viewBox="`0 0 ${chartWidth} 220`"
                 role="img"
                 :aria-label="`Histórico de preços de ${productName}`"
               >
                 <g v-for="tick in historyChart.priceTicks" :key="tick.y">
-                  <line x1="54" x2="738" :y1="tick.y" :y2="tick.y" />
-                  <text x="46" :y="tick.y + 4" text-anchor="end">
+                  <line x1="64" :x2="chartWidth - 16" :y1="tick.y" :y2="tick.y" />
+                  <text x="56" :y="tick.y + 4" text-anchor="end">
                     {{ formatPrice(tick.value) }}
                   </text>
                 </g>
@@ -1012,16 +1038,18 @@ onMounted(() => void loadProduct())
 .pd-chart-panel {
   padding: 12px 13px 9px;
 }
-.pd-chart-scroll {
+.pd-chart-container {
   width: 100%;
-  overflow-x: auto;
+  min-width: 0;
+  overflow: hidden;
 }
 .pd-chart {
   display: block;
   width: 100%;
-  min-width: 520px;
-  height: auto;
-  overflow: visible;
+  min-width: 0;
+  max-width: 100%;
+  height: 220px;
+  overflow: hidden;
 }
 .pd-chart line {
   stroke: #e9eeea;
@@ -1294,9 +1322,6 @@ onMounted(() => void loadProduct())
   }
   .pd-chart-panel {
     grid-row: 2;
-  }
-  .pd-chart {
-    min-width: 570px;
   }
   .pd-records > .pd-section-heading {
     align-items: start;
