@@ -207,3 +207,29 @@ class ExpandirTriosTests(TestCase):
         )
         self.assertEqual(Produto.objects.count(), 0)
         self.assertEqual(Preco.objects.count(), 0)
+
+    @patch("coleta.management.commands.expandir_trios.sessao_atacadao")
+    @patch("coleta.management.commands.expandir_trios.sessao_savegnago")
+    @patch("coleta.management.commands.expandir_trios.buscar_paginado")
+    @patch("coleta.management.commands.expandir_trios.buscar_carrefour")
+    def test_lote_4_so_persiste_produto_confirmado_nos_tres(
+        self, carrefour, vtex, sessao_save, sessao_atac,
+    ):
+        termos_pesquisados = []
+
+        def buscar(loja, termo, sessao, paginas, tamanho):
+            termos_pesquisados.append((loja, termo))
+            return {EAN: oferta(loja)} if termo == "colgate" else {}
+
+        vtex.side_effect = buscar
+        carrefour.return_value = [carrefour_bruto()]
+        call_command(
+            "expandir_trios", gravar=True, lote=4,
+            paginas=1, tamanho=2, buscas_carrefour=4,
+            itens_carrefour=2, stdout=StringIO(),
+        )
+        self.assertIn(("Savegnago", "creme dental"), termos_pesquisados)
+        self.assertIn(("Atacadão", "papel higienico"), termos_pesquisados)
+        self.assertEqual(Produto.objects.count(), 1)
+        self.assertEqual(OfertaFonte.objects.count(), 3)
+        self.assertEqual(Preco.objects.count(), 3)

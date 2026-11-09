@@ -31,6 +31,10 @@ TERMOS = {
         "iogurte", "chocolate", "shampoo", "sabonete", "amaciante"),
     3: ("nestle", "italac", "piracanjuba", "camil", "quaker", "nissin",
         "marilan", "pilao", "coca", "ypê", "yoki", "panco"),
+    4: ("colgate", "rexona", "dove", "nivea", "sadia", "seara",
+        "qualy", "bauducco", "margarina", "requeijao", "papel higienico",
+        "creme dental", "desodorante", "agua mineral", "pipoca",
+        "guardanapo"),
 }
 
 CARREFOUR_SEMENTES = {
@@ -40,6 +44,9 @@ CARREFOUR_SEMENTES = {
         "sabonete", "chocolate", "suco", "sabão"),
     3: ("nestle", "italac", "piracanjuba", "camil", "marilan",
         "nissin", "ypê", "yoki", "pilão"),
+    4: ("colgate", "rexona", "dove", "nivea", "sadia", "seara",
+        "qualy", "bauducco", "papel higiênico", "creme dental",
+        "requeijão", "margarina"),
 }
 CEP = "14010000"
 

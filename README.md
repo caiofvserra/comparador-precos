@@ -50,7 +50,7 @@ Somente EANs presentes nas duas redes são procurados no Carrefour e
 
 - Diagnóstico: `python backend/manage.py expandir_trios --lote 1`
 - Coleta: `python backend/manage.py expandir_trios --lote 1 --gravar`
-- Lotes adicionais: `--lote 2` e `--lote 3`, com categorias e marcas distintas.
+- Lotes adicionais: `--lote 2`, `--lote 3` e `--lote 4`, com categorias e marcas distintas. O lote 4 amplia a busca de higiene pessoal, limpeza, lácteos e marcas populares.
 
 No Render, executar uma vez com `BOOTSTRAP_EXPANDIR_TRIOS=true` e
 `TRIOS_LOTE=1` (ou 2/3) e depois voltar a flag para `false`. A rotina
