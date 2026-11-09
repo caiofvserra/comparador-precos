@@ -17,12 +17,8 @@ const selectedBrands = ref<string[]>([])
 const selectedCategories = ref<string[]>([])
 const minPrice = ref('')
 const maxPrice = ref('')
-const coverageOptions: { min: 0 | 2 | 3; label: string }[] = [
-  { min: 3, label: '3 supermercados' },
-  { min: 2, label: '2 ou mais' },
-  { min: 0, label: 'Todos' },
-]
-const coverageFilter = ref<0 | 2 | 3>(0)
+// Critério automático: definido pela configuração do backend, sem controles na interface.
+const coverageFilter = ref<0 | 3>(0)
 const configResolved = ref(isDemoData)
 const products = ref<Product[]>([])
 const router = useRouter()
@@ -140,12 +136,6 @@ function clearFilters() {
   maxPrice.value = ''
 }
 
-function selectCoverage(min: 0 | 2 | 3) {
-  if (coverageFilter.value === min) return
-  coverageFilter.value = min
-  void searchProducts()
-}
-
 function searchExample(query: string) {
   search.value = query
   // O watcher faz a consulta uma única vez, sem repetir requisições.
@@ -246,24 +236,6 @@ onMounted(async () => {
                 </h2>
               </div>
             </div>
-            <div v-if="!isDemoData && configResolved" class="mvp-coverage-filter" aria-label="Disponibilidade nos supermercados">
-              <span>Comparar preços em:</span>
-              <div class="mvp-coverage-options" role="group" aria-label="Quantidade de supermercados">
-                <button
-                  v-for="option in coverageOptions"
-                  :key="option.min"
-                  type="button"
-                  :class="{ active: coverageFilter === option.min }"
-                  :aria-pressed="coverageFilter === option.min"
-                  @click="selectCoverage(option.min)"
-                >
-                  {{ option.label }}
-                </button>
-              </div>
-            </div>
-            <p v-if="!isDemoData && configResolved && coverageFilter === 3" class="mvp-coverage-note">
-              Mostrando apenas produtos com preços cadastrados em Atacadão, Savegnago e Carrefour.
-            </p>
             <p v-if="hasCatalogFilters" class="mvp-filter-summary">
               <span v-if="selectedCategories.length">{{ selectedCategories.join(', ') }}</span>
               <span v-if="selectedBrands.length">{{ selectedBrands.join(', ') }}</span>
@@ -279,9 +251,7 @@ onMounted(async () => {
             </div>
             <div v-else-if="!visibleProducts.length" class="mvp-state mvp-empty">
               <span aria-hidden="true">⌕</span><strong>Nenhum produto encontrado</strong
-              ><small>{{ coverageFilter === 3 && !isDemoData
-                ? 'Não há resultados com preços nas três redes para essa busca. Veja 2 ou mais ou Todos.'
-                : 'Tente outro nome ou marca.' }}</small>
+              ><small>Tente outro nome ou marca.</small>
             </div>
             <div v-else class="mvp-product-grid">
               <ProductCard
@@ -591,49 +561,6 @@ onMounted(async () => {
   font-size: inherit;
   font-weight: inherit;
 }
-.mvp-coverage-filter {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 7px;
-  margin-bottom: 8px;
-}
-.mvp-coverage-options {
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  gap: 7px;
-  max-width: 100%;
-  overflow-x: auto;
-}
-.mvp-coverage-filter > span {
-  margin-right: 4px;
-  color: #557164;
-  font-size: 11px;
-  font-weight: 700;
-}
-.mvp-coverage-options > button {
-  flex: 0 0 auto;
-  white-space: nowrap;
-  padding: 7px 10px;
-  border: 1px solid #d4e5da;
-  border-radius: 8px;
-  background: #fff;
-  color: #527364;
-  font-size: 10px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.mvp-coverage-options > button.active {
-  border-color: #087c59;
-  background: #e5f5eb;
-  color: #075b42;
-}
-.mvp-coverage-note {
-  margin: 0 0 14px;
-  color: #698475;
-  font-size: 10px;
-}
 .mvp-product-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -733,16 +660,6 @@ onMounted(async () => {
   }
   .mvp-filter-heading {
     min-height: 34px;
-  }
-}
-@media (max-width: 520px) {
-  .mvp-coverage-filter {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 9px;
-  }
-  .mvp-coverage-options {
-    width: 100%;
   }
 }
 @media (max-width: 520px) {
