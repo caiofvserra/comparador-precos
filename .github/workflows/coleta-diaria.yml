@@ -1,0 +1,40 @@
+name: Atualização diária de preços (três mercados)
+
+on:
+  schedule:
+    # 09:00 UTC = 06:00 America/Sao_Paulo.
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+  # Primeira execução ainda hoje, ao integrar este workflow na main.
+  # Alterações normais no código não disparam recoletas extras.
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/coleta-diaria.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: atualizacao-diaria-precos
+  cancel-in-progress: false
+
+jobs:
+  atualizar-precos:
+    name: Coletar e conferir registro no Render
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Obter código
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Solicitar atualização segura e acompanhar resultado
+        env:
+          COLETOR_URL: "https://comparador-precos-web-9j6z.onrender.com"
+        run: python scripts/acionar_coleta.py

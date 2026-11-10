@@ -1,5 +1,5 @@
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):
@@ -41,11 +41,7 @@ class Command(BaseCommand):
 
         if falhas:
             nomes = ", ".join(nome for nome, _ in falhas)
-            self.stderr.write(
-                self.style.WARNING(
-                    f"Atualização concluída com falhas em: {nomes}."
-                )
-            )
+            raise CommandError(f"Atualização concluída com falhas em: {nomes}.")
         else:
             self.stdout.write(
                 self.style.SUCCESS("Atualização das três redes concluída.")
