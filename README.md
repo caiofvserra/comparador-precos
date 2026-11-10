@@ -113,7 +113,7 @@ A coleta atualiza **somente ofertas já cadastradas**, não cadastra preços fic
 
 A agenda abaixo no Windows é uma alternativa **local**, independente do GitHub Actions, e só funciona se o computador estiver ligado.
 
-⏰ Atualização automática de preços.
+#### Agendamento local pelo Windows.
 
 📈 Registro histórico de alterações de preços.
 
