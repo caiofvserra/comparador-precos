@@ -101,6 +101,18 @@ Coleta, identificação por EAN e atualização de preços
 
 📦 Importação e conciliação de produtos e ofertas.
 
+⏰ Atualização automática de preços
+
+### GitHub Actions + Render (produção)
+
+O workflow `.github/workflows/coleta-diaria.yml` executa todos os dias às **06h (America/Sao_Paulo)** e pode ser iniciado manualmente em **Actions → Atualização diária de preços (três mercados) → Run workflow**. Uma execução inicial também acontece no push de inclusão do próprio workflow.
+
+O GitHub Actions não recebe credenciais do PostgreSQL: usa uma identidade OIDC assinada pelo GitHub, restrita ao repositório, workflow e branch `main`. O Django autentica e inicia um subprocesso no próprio Render, que já tem conexão segura com o PostgreSQL. O GitHub Actions acompanha o status gravado em `coleta_execucaocoleta` e falha se a coleta falhar.
+
+A coleta atualiza **somente ofertas já cadastradas**, não cadastra preços fictícios, usa CEP 14010000 para regionalização e registra no máximo uma observação diária de preço inalterado por oferta, após consulta real. As mudanças de preço geram novos registros e preservam o histórico. Falhas por produto aparecem nos logs do Render; situações de falha geral retornadas pelos comandos invalidam a execução.
+
+A agenda abaixo no Windows é uma alternativa **local**, independente do GitHub Actions, e só funciona se o computador estiver ligado.
+
 ⏰ Atualização automática de preços.
 
 📈 Registro histórico de alterações de preços.
