@@ -1,6 +1,7 @@
 """Executa a coleta no Render e salva o resultado consultável pelo Actions."""
 
-from django.core.management import BaseCommand, CommandError, call_command
+from django.core.management import call_command
+from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
 from django.utils import timezone
 
