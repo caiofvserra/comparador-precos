@@ -26,13 +26,11 @@
 }
 
 html {
-  min-width: 320px;
   scroll-behavior: smooth;
   scroll-padding-top: 20px;
 }
 
 body {
-  min-width: 320px;
   margin: 0;
   background: var(--mvp-bg);
 }
@@ -252,18 +250,19 @@ summary:focus-visible {
 
   .mvp-sidebar {
     position: fixed;
+    z-index: 10;
     right: 0;
     bottom: 0;
     left: 0;
     width: 100%;
-    padding: 5px 8px calc(5px + env(safe-area-inset-bottom));
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
     border-top: 1px solid rgb(255 255 255 / 12%);
     box-shadow: 0 -5px 24px rgb(15 35 60 / 18%);
   }
 
   .app-content {
     min-height: calc(100vh - 64px);
-    padding-bottom: 74px;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
   }
 
   .mvp-app {
@@ -295,6 +294,12 @@ summary:focus-visible {
   .mvp-footer {
     padding-right: 14px;
     padding-left: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .mvp-topbar-location span {
+    max-width: 68px;
   }
 }
 

@@ -274,6 +274,11 @@ onMounted(() => void loadCatalog().catch(() => undefined))
 }
 
 @media (max-width: 900px) {
+  .mvp-sidebar {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
   .mvp-brand-copy small {
     font-size: 10px;
   }
@@ -288,15 +293,14 @@ onMounted(() => void loadCatalog().catch(() => undefined))
   }
 
   .mvp-sidebar-nav {
-    flex-direction: row;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 4px;
   }
 
   .mvp-sidebar-nav a {
     min-width: 0;
-    min-height: 54px;
-    flex: 1 1 0;
+    min-height: 64px;
     flex-direction: column;
     justify-content: center;
     gap: 4px;
@@ -323,9 +327,10 @@ onMounted(() => void loadCatalog().catch(() => undefined))
 
   .mvp-sidebar-nav a > span {
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.15;
+    overflow-wrap: normal;
+    text-wrap: balance;
+    white-space: normal;
   }
 
   .mvp-sidebar-nav b {
