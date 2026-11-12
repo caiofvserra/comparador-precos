@@ -5,12 +5,14 @@ on:
     # 09:00 UTC = 06:00 America/Sao_Paulo.
     - cron: "0 9 * * *"
   workflow_dispatch:
-  # Primeira execução ainda hoje, ao integrar este workflow na main.
-  # Alterações normais no código não disparam recoletas extras.
+  # Atualizações no próprio coletor também disparam uma coleta de verificação.
+  # Alterações do frontend ou da documentação não geram recoletas extras.
   push:
     branches: [main]
     paths:
       - ".github/workflows/coleta-diaria.yml"
+      - "scripts/acionar_coleta.py"
+      - "backend/coleta/**"
 
 permissions:
   contents: read
