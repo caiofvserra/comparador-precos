@@ -7,7 +7,9 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health/
-    autoDeployTrigger: checksPass
+    # O deploy não deve depender de checks que o Render pode não detectar.
+    # A CI permanece executando nos PRs e na main.
+    autoDeployTrigger: commit
     envVars:
       - key: DJANGO_SECRET_KEY
         generateValue: true
