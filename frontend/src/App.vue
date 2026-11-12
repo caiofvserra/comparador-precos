@@ -754,6 +754,14 @@ onMounted(async () => {
     padding-left: 20px;
   }
 }
+@media (max-width: 520px) {
+  .mvp-hero {
+    margin-right: -15px;
+    margin-left: -15px;
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .mvp-app *,
   .mvp-app *::before,

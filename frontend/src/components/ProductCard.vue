@@ -284,6 +284,9 @@ function handleImageError() {
   padding: 0 12px 12px;
 }
 .product-compare {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 0;
   min-height: 38px;
   border-radius: 8px;
   background: #087c59;
