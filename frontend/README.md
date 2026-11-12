@@ -1,73 +1,46 @@
-# Frontend - Comparador de Preços
+# Frontend — Comparador de Preços
 
-Interface web do Projeto Integrador II, desenvolvida com Vue 3, TypeScript, Vite e Vue Router.
+Interface **web responsiva** desenvolvida com Vue 3, TypeScript, Vite e Vue Router para o Projeto Integrador II.
 
-## Requisitos
+**[Abrir aplicação publicada](https://comparador-precos-web-9j6z.onrender.com)** · [README principal](../README.md)
 
-- Node.js compatível com `package.json`
-- npm
-- Backend Django em execução para trabalhar com dados reais
+## Como funciona em produção
 
-## Configuração
+O `Dockerfile` constrói os arquivos do frontend e os integra à aplicação Django publicada no Render. **Frontend e API utilizam o mesmo endereço público**; não é necessário iniciar `npm run dev` nem manter um computador ligado para acessar o sistema.
 
-Na pasta `frontend`:
+- O build de produção usa `VITE_DEMO_MODE=false`: a interface consulta **dados reais disponibilizados pela API**, não mocks de demonstração.
+- O endereço-base da API usa o mesmo domínio quando `VITE_API_URL` não está configurado (requisições relativas a `/api/v1/`).
+- `CATALOGO_MODO=triangulacao` é enviado pelo backend via `GET /api/v1/configuracao/` e controla a priorização inicial de itens comparáveis nos três supermercados; não altera o trabalho dos coletores.
+
+## Funcionalidades
+
+- Pesquisa, filtros e listagem de produtos.
+- Comparação de preços e identificação de ofertas indisponíveis.
+- Histórico de preços com representação gráfica.
+- Lista de compras com quantidade, subtotais e total por supermercado.
+- Links para as fontes e supermercados.
+- Imagens da API quando disponíveis, com fallback ilustrativo.
+- Interface responsiva, inclusive menu de navegação adaptado a telas pequenas.
+
+## Desenvolvimento local (opcional)
+
+Requisitos: Node.js compatível com `package.json`, npm e API Django acessível.
 
 ```bash
-npm install
-```
-
-Copie o arquivo de ambiente:
-
-```bash
+cd frontend
+npm ci
 cp .env.example .env
-```
-
-No Windows:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Para consumir a API real:
-
-```env
-VITE_API_URL=http://localhost:8000
-```
-
-Sem `VITE_API_URL`, a aplicação entra em modo demonstrativo com dados locais.
-
-## Desenvolvimento
-
-```bash
 npm run dev
 ```
 
-A aplicação fica normalmente em `http://localhost:5173/`.
+No Windows, copie o ambiente com `Copy-Item .env.example .env`. O Vite normalmente estará em `http://localhost:5173/`. Para usar o backend local em outra porta, configure `VITE_API_URL=http://localhost:8000` no `frontend/.env`.
 
-## Build
+**Importante:** omitir `VITE_API_URL` **não** ativa os dados fictícios: apenas utiliza URLs relativas. Os dados de demonstração só são habilitados explicitamente com `VITE_DEMO_MODE=true`, em contexto local/ilustrativo.
+
+## Build e validação
 
 ```bash
 npm run build
 ```
 
-O comando executa a verificação de tipos e gera a versão otimizada para produção.
-
-## Funcionalidades
-
-- pesquisa de produtos;
-- comparação de preços entre supermercados;
-- histórico de preços;
-- lista de compras temporária;
-- comparação dos totais por supermercado;
-- indicação de lista completa/incompleta;
-- links para as fontes e para os sites dos supermercados;
-- imagens reais da API quando disponíveis, com fallback ilustrativo;
-- layout responsivo para desktop e celular.
-
-## Dados
-
-Com a API configurada, o frontend utiliza os dados do PostgreSQL expostos pelo Django REST Framework. As imagens reais retornadas pela API têm prioridade sobre os fallbacks locais.
-
-## Validação
-
-O GitHub Actions executa `npm run build` automaticamente em Pull Requests e pushes para a `main`.
+A CI executa o build em Pull Requests e pushes à `main`. Depois de um merge, confira a nova versão em [Render → Deploys](https://dashboard.render.com/web/srv-dbnfnfbrjlhs738meva0); o merge não significa que o build já foi publicado.

@@ -1,524 +1,109 @@
-﻿🛒 Comparador de Preços de Supermercados
+# 🛒 Comparador de Preços de Supermercados
 
-<p align="center">
-  <strong>Compare preços, economize nas compras e encontre as melhores ofertas!</strong>
-</p>
+Aplicação **web** do Projeto Integrador II para pesquisar produtos, comparar preços, consultar históricos e estimar o custo de listas de compras nos supermercados **Savegnago, Atacadão e Carrefour**.
 
-<p align="center">
-  Aplicação web desenvolvida como Projeto Integrador, com integração de dados de três redes de supermercados: Savegnago, Atacadão e Carrefour.
-</p>
+**[Acessar a aplicação publicada](https://comparador-precos-web-9j6z.onrender.com)** · **[API pública](https://comparador-precos-web-9j6z.onrender.com/api/v1/)** · **[GitHub Actions](https://github.com/caiofvserra/comparador-precos/actions)**
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.11%2B-blue?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/Django-5.1-green?logo=django&logoColor=white" alt="Django">
-  <img src="https://img.shields.io/badge/Vue.js-3-42b883?logo=vuedotjs&logoColor=white" alt="Vue.js">
-  <img src="https://img.shields.io/badge/TypeScript-blue?logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/PostgreSQL-Database-4169e1?logo=postgresql&logoColor=white" alt="PostgreSQL">
-</p>
+> **Ambiente de produção:** frontend Vue e API Django publicados juntos no **Render**, com banco **PostgreSQL** e atualização de preços agendada no **GitHub Actions**. Não é necessário instalar Python, PostgreSQL ou Node.js para usar o site. Executar comandos num computador local não atualiza os dados hospedados.
 
-🚀 Deploy público no Render
+## O que o sistema faz
 
-O repositório possui um `render.yaml` que cria:
+- Pesquisa e listagem de produtos com imagens quando disponíveis.
+- Comparação de preços e indicação de indisponibilidade por supermercado.
+- Histórico das observações e mudanças de preços, quando registradas.
+- Lista de compras com quantidades, totais e identificação de itens ausentes em cada supermercado.
+- Interface responsiva para computadores e celulares.
+- Links para as fontes das ofertas e para as redes de supermercados.
 
-- uma aplicação web full-stack no plano gratuito;
-- um PostgreSQL gratuito;
-- frontend Vue e API Django no mesmo endereço público.
+Os valores exibidos em produção provêm das integrações implementadas, e **não de preços inventados para a apresentação**. A disponibilidade e a cobertura dependem dos dados efetivamente obtidos em cada fonte.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/caiofvserra/comparador-precos)
+## Arquitetura em produção
 
-Após o primeiro deploy, o banco inicia vazio. Execute/importa a coleta de dados antes da demonstração para preencher produtos e preços reais.
+| Componente | Tecnologia / onde funciona |
+| --- | --- |
+| Interface | Vue 3, TypeScript e Vite; build servido pelo Django no Render |
+| API | Python 3.11, Django e Django REST Framework, no mesmo domínio |
+| Banco de dados | PostgreSQL associado ao serviço no Render |
+| Empacotamento | Dockerfile na raiz do repositório |
+| Integração contínua | `.github/workflows/ci.yml`: testes do backend, build do frontend e build Docker |
+| Atualização de preços | `.github/workflows/coleta-diaria.yml`: agendamento via GitHub Actions, executado no ambiente publicado |
 
-## Modos de apresentação e coleta
+A definição de infraestrutura está em `render.yaml`. O serviço público utilizado pelo agendamento é **[comparador-precos-web-9j6z](https://comparador-precos-web-9j6z.onrender.com)**.
 
-**A triangulação é temporária para o Render da demonstração acadêmica.**
-Ela não substitui as rotinas de importação e atualização do catálogo.
+## Coleta automática de preços
 
-- **Apresentação no Render:** `CATALOGO_MODO=triangulacao` (definido em `render.yaml`) faz a busca abrir mostrando somente itens com preços cadastrados em três supermercados. O critério de cobertura é automático e não aparece como filtro na interface. A coleta não acontece automaticamente por causa dessa variável.
-- **Aplicação normal:** sem `CATALOGO_MODO` ou com `CATALOGO_MODO=completo`, a busca mostra **todos os produtos** por padrão. A comparação de preços continua disponível no detalhe de cada produto.
-- **Coleta real completa:** permanece independente da apresentação. O repositório conserva `importar_savegnago`, `importar_atacadao`, `atualizar_precos_savegnago`, `atualizar_precos_atacadao`, `atualizar_precos_carrefour` e `atualizar_precos_todos`. Os coletores de cada fonte possuem suas próprias condições de importação e atualização: o coletor do Carrefour, por exemplo, ainda só grava ofertas de EANs já cadastrados. Ampliar a cobertura dessa fonte é uma evolução futura.
-- **Triangulação pontual:** `validar_trios_por_ean --gravar` tenta encontrar preços do mesmo EAN nas três fontes e só persiste trios completos. Não é requisito para a coleta geral nem deve ser executado em toda inicialização.
-- **Sem valores fictícios no Render:** `VITE_DEMO_MODE=false` permanece. O modo `triangulacao` prioriza preços coletados reais, não os exemplos ilustrativos do frontend.
+O workflow **Atualização diária de preços (três mercados)** está agendado para **06h (horário de Brasília, UTC−3)**, diariamente, e também aceita execução manual em **[Actions → workflow de coleta](https://github.com/caiofvserra/comparador-precos/actions)**.
 
-A API `GET /api/v1/configuracao/` retorna o modo usado para o filtro inicial da interface. `GET /api/v1/produtos/` sem parâmetros continua retornando o catálogo completo, ordenado pelo nome, independentemente do modo.
+1. O GitHub Actions solicita uma atualização autenticada à aplicação publicada, usando identidade OIDC do workflow.
+2. O Django no Render executa o comando de atualização das ofertas de Savegnago, Atacadão e Carrefour, com acesso ao PostgreSQL do próprio ambiente.
+3. O workflow acompanha o resultado da execução; falhas gerais são registradas e podem fazer a execução falhar.
 
-### Ampliação da amostra comparável na demonstração
+**Limite importante:** a rotina diária **atualiza ofertas já cadastradas**. Ela não faz automaticamente uma importação ilimitada de novos produtos. Para ampliar o catálogo, existem comandos próprios de importação, conciliação e busca de correspondências por EAN, executados de forma controlada. O CEP utilizado na coleta agendada é `14010000`.
 
-O comando `expandir_trios` é um coletor **pontual para demonstração** que
-varre vários resultados e todos os SKUs públicos do Savegnago e Atacadão.
-Somente EANs presentes nas duas redes são procurados no Carrefour e
-**nenhum preço é criado sem origem e disponibilidade confirmadas**.
+A coleta não gera preços fictícios. As mudanças de preço alimentam o histórico e a rotina pode registrar uma observação diária de preço inalterado, após consulta real à fonte. A disponibilidade da oferta e falhas de cada coletor devem ser conferidas pelos registros de execução.
 
-- Diagnóstico: `python backend/manage.py expandir_trios --lote 1`
-- Coleta: `python backend/manage.py expandir_trios --lote 1 --gravar`
-- Lotes adicionais: `--lote 2`, `--lote 3` e `--lote 4`, com categorias e marcas distintas. O lote 4 amplia a busca de higiene pessoal, limpeza, lácteos e marcas populares.
+### Conferir ou executar a coleta
 
-No Render, executar uma vez com `BOOTSTRAP_EXPANDIR_TRIOS=true` e
-`TRIOS_LOTE=1` (ou 2/3) e depois voltar a flag para `false`. A rotina
-se inicia após a aplicação subir e não cria cron ou serviço pago.
-A quantidade de itens com preços nas três redes depende do que as fontes
-realmente disponibilizam; a coleta não garante um total específico. O
-catálogo e os coletores gerais continuam independentes desse procedimento.
+- Abra o workflow `.github/workflows/coleta-diaria.yml` na aba **Actions** e consulte o resultado mais recente.
+- Para uma execução sob demanda, selecione **Run workflow** na branch `main`.
+- Confira também os logs do serviço correspondente no Render; a execução agendada não depende de manter um computador pessoal ligado.
 
-📌 Sobre o projeto
+**Não confundir:** os comandos `python manage.py ...` executados em um banco de desenvolvimento local **não alteram** o PostgreSQL de produção. O antigo agendamento pelo Windows é apenas uma possibilidade local, não o mecanismo de coleta usado pelo site.
 
-O Comparador de Preços de Supermercados é uma aplicação web desenvolvida para facilitar a pesquisa de produtos, a comparação de preços e o planejamento de compras.
+## Modos de catálogo e dados
 
-O sistema reúne informações de diferentes supermercados, permitindo consultar ofertas, acompanhar o histórico de preços e simular o custo de listas de compras.
+- **Apresentação web:** `CATALOGO_MODO=triangulacao` no Render prioriza na tela inicial produtos com preços nas **três** redes. Trata-se de um critério de exibição, não de uma rotina de coleta.
+- **Catálogo completo:** `CATALOGO_MODO=completo` exibe o catálogo sem essa priorização inicial. A API `GET /api/v1/produtos/` sem `q` continua retornando todos os produtos, ordenados por nome.
+- **Modo demonstrativo do frontend:** `VITE_DEMO_MODE=true` habilita mocks ilustrativos apenas quando configurado explicitamente. O Dockerfile da produção define `VITE_DEMO_MODE=false`.
+- **Coleta pontual de correspondências:** `validar_trios_por_ean` e `expandir_trios` permitem buscar equivalências entre redes. São tarefas de ampliação controlada, **não** parte da atualização diária automática.
 
-Atualmente, o projeto possui integração com três redes:
+Consulte `backend/README.md` para os comandos específicos de coleta e os detalhes dos contratos da API.
 
-Supermercado
+## Entrega de novas versões
 
-Integração
+O fluxo esperado é: **branch → Pull Request → merge na `main` → CI → deploy no Render**. O serviço principal está configurado para deploy automático **após aprovação das verificações** (`checksPass`).
 
-🟢 Savegnago
+Se um merge não aparecer no site:
 
-Coleta e atualização de preços
+1. Confira na aba **Actions** se a CI referente ao **commit da `main`** terminou com sucesso.
+2. Confira em **[Render → serviço principal](https://dashboard.render.com/web/srv-dbnfnfbrjlhs738meva0)** → **Events/Deploys** se houve um deploy novo e se o commit corresponde ao merge.
+3. Caso não exista deploy novo mesmo com a CI aprovada, revise a integração/autodeploy entre GitHub e Render. **O merge não publica instantaneamente nem comprova, por si só, que o deploy ocorreu.**
+4. Após a publicação, recarregue o site; no celular, teste também em uma aba privada para excluir cache antigo.
 
-🔵 Atacadão
+O serviço e o banco de **produção não são substituídos** por um servidor iniciado localmente. Evite executar coletas de gravação ou migrações em ambientes compartilhados sem verificar o destino do banco.
 
-Coleta, conciliação e atualização de preços
+## Tecnologias e estrutura
 
-🔴 Carrefour
-
-Coleta, identificação por EAN e atualização de preços
-
-✨ Funcionalidades
-
-🔎 Pesquisa e listagem de produtos.
-
-💰 Comparação de preços entre supermercados.
-
-📊 Consulta do histórico de preços.
-
-🛒 Simulação do custo de uma lista de compras.
-
-🚫 Identificação de produtos indisponíveis.
-
-🖼️ Exibição de imagens dos produtos.
-
-🔄 Integração com Savegnago, Atacadão e Carrefour.
-
-📦 Importação e conciliação de produtos e ofertas.
-
-⏰ Atualização automática de preços
-
-### GitHub Actions + Render (produção)
-
-O workflow `.github/workflows/coleta-diaria.yml` executa todos os dias às **06h (America/Sao_Paulo)** e pode ser iniciado manualmente em **Actions → Atualização diária de preços (três mercados) → Run workflow**. Uma execução inicial também acontece no push de inclusão do próprio workflow.
-
-O GitHub Actions não recebe credenciais do PostgreSQL: usa uma identidade OIDC assinada pelo GitHub, restrita ao repositório, workflow e branch `main`. O Django autentica e inicia um subprocesso no próprio Render, que já tem conexão segura com o PostgreSQL. O GitHub Actions acompanha o status gravado em `coleta_execucaocoleta` e falha se a coleta falhar.
-
-A coleta atualiza **somente ofertas já cadastradas**, não cadastra preços fictícios, usa CEP 14010000 para regionalização e registra no máximo uma observação diária de preço inalterado por oferta, após consulta real. As mudanças de preço geram novos registros e preservam o histórico. Falhas por produto aparecem nos logs do Render; situações de falha geral retornadas pelos comandos invalidam a execução.
-
-A agenda abaixo no Windows é uma alternativa **local**, independente do GitHub Actions, e só funciona se o computador estiver ligado.
-
-#### Agendamento local pelo Windows.
-
-📈 Registro histórico de alterações de preços.
-
-🧰 Tecnologias utilizadas
-
-Frontend
-
-Tecnologia
-
-Utilização
-
-Vue 3
-
-Construção da interface
-
-TypeScript
-
-Tipagem e organização do código
-
-Vite
-
-Ambiente de desenvolvimento e build
-
-Vue Router
-
-Navegação entre páginas
-
-Backend
-
-Tecnologia
-
-Utilização
-
-Python
-
-Linguagem principal
-
-Django
-
-Framework backend
-
-Django REST Framework
-
-Construção da API
-
-PostgreSQL
-
-Banco de dados relacional
-
-Requests
-
-Consultas às fontes de dados dos supermercados
-
-📁 Estrutura do projeto
-
+```text
 comparador-precos/
-│
-├── backend/
-│   ├── catalogo/
-│   ├── coleta/
-│   │   └── management/
-│   │       └── commands/
-│   ├── config/
-│   ├── precos/
-│   ├── simulacao/
-│   ├── tests/
-│   ├── .env.example
-│   ├── manage.py
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   ├── .env.example
-│   └── package.json
-│
-├── docs/
-│
+├── backend/                    # API Django, modelos, comandos de coleta e testes
+├── frontend/                   # Vue 3, TypeScript, Vite e interface responsiva
+├── docs/                       # documentação técnica
+├── .github/workflows/
+│   ├── ci.yml                  # testes e builds
+│   └── coleta-diaria.yml       # rotina agendada de produção
+├── Dockerfile                  # frontend + backend em um serviço web
+├── render.yaml                 # definição de infraestrutura Render
 └── README.md
+```
 
-🚀 Instalação e execução
+## Endpoints principais
 
-📋 Requisitos
+| Método | Rota | Uso |
+| --- | --- | --- |
+| GET | `/api/v1/produtos/` | Pesquisa e lista produtos |
+| GET | `/api/v1/supermercados/` | Supermercados ativos |
+| GET | `/api/v1/produtos/{id}/comparacao/` | Preços por supermercado |
+| GET | `/api/v1/produtos/{id}/historico/` | Histórico por produto |
+| POST | `/api/v1/listas/simular/` | Estimativa da lista de compras |
+| GET | `/api/v1/configuracao/` | Modo de apresentação do catálogo |
 
-Antes de iniciar, instale:
+## Desenvolvimento local (opcional)
 
-Python 3.11 ou superior.
+Para **desenvolver ou testar** o código, consulte **[backend/README.md](backend/README.md)** e **[frontend/README.md](frontend/README.md)**. Eles explicam como iniciar PostgreSQL, Django e Vite num ambiente separado. Os comandos locais não são passos necessários para quem acessa o site publicado.
 
-Node.js compatível com a versão exigida em frontend/package.json.
+Documentação complementar: **[docs/README.md](docs/README.md)**. Nunca versione `.env`, tokens, senhas ou credenciais de produção.
 
-npm.
+---
 
-PostgreSQL.
-
-Git.
-
-1️⃣ Configuração do banco de dados
-
-Crie um usuário e um banco PostgreSQL para o projeto.
-
-Caso ainda não existam, execute:
-
-CREATE USER comparador WITH PASSWORD 'comparador' CREATEDB;
-CREATE DATABASE comparador OWNER comparador;
-
-⚠️ Se o usuário ou banco já existir, não execute novamente os comandos correspondentes. Verifique as permissões e configurações existentes.
-
-2️⃣ Configuração do backend
-
-Na raiz do projeto, abra o PowerShell e execute:
-
-cd backend
-
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-python -m pip install -r requirements.txt
-
-Copy-Item .env.example .env
-
-Edite o arquivo backend/.env e configure as variáveis necessárias para o Django e o PostgreSQL.
-
-Execute as migrações:
-
-python manage.py migrate
-
-Crie um usuário administrativo:
-
-python manage.py createsuperuser
-
-Inicie o servidor:
-
-python manage.py runserver
-
-Endereços disponíveis:
-
-API: http://localhost:8000/api/v1/
-
-Django Admin: http://localhost:8000/admin/
-
-3️⃣ Configuração do frontend
-
-Abra outro terminal PowerShell na raiz do projeto:
-
-cd frontend
-
-Copy-Item .env.example .env
-
-npm install
-npm run dev
-
-Confira se o arquivo frontend/.env contém a URL correta da API:
-
-VITE_API_URL=http://localhost:8000
-
-A aplicação ficará disponível normalmente em:
-
-http://localhost:5173/
-
-💡 Mantenha os servidores do backend e do frontend em execução enquanto utiliza a aplicação.
-
-🏪 Integração com supermercados
-
-As integrações são implementadas por comandos de gerenciamento do Django, localizados em:
-
-backend/coleta/management/commands/
-
-Os comandos devem ser executados na raiz do projeto, utilizando o interpretador Python do ambiente virtual.
-
-⚠️ Importante: os comandos de coleta e conciliação que oferecem suporte à simulação não gravam alterações no banco por padrão. Utilize --gravar somente depois de conferir os resultados.
-
-🟢 1. Savegnago
-
-A integração permite pesquisar produtos, importar ofertas e atualizar preços cadastrados.
-
-📦 Importar produtos e ofertas
-
-Exemplo de pesquisa por arroz:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py importar_savegnago --termo "arroz" --quantidade 10 --cep 14010000
-
-Para gravar os dados:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py importar_savegnago --termo "arroz" --quantidade 10 --cep 14010000 --gravar
-
-🔄 Atualizar preços cadastrados
-
-Simulação:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_savegnago
-
-Gravação:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_savegnago --gravar
-
-🔵 2. Atacadão
-
-A integração realiza consultas de produtos e ofertas no Atacadão, utilizando o código de barras para identificar correspondências.
-
-🔗 Conciliar produtos e ofertas
-
-Simulação:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py conciliar_atacadao --quantidade 20
-
-Gravação:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py conciliar_atacadao --quantidade 20 --gravar
-
-O comando também permite utilizar filtros como --limite, --offset e --ean.
-
-A conciliação considera a compatibilidade de marca e nome dos produtos para reduzir associações incorretas.
-
-🔄 Atualizar preços cadastrados
-
-Simulação:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_atacadao --cep 14010-000
-
-Gravação:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_atacadao --cep 14010-000 --gravar
-
-🔴 3. Carrefour
-
-A integração consulta os produtos disponíveis no site do Carrefour, utilizando informações estruturadas das páginas dos produtos para identificar código de barras, nome, marca, disponibilidade e preço.
-
-🔎 Pesquisar produtos
-
-Exemplo de pesquisa por arroz:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_carrefour --termo "arroz" --quantidade 10
-
-Para gravar os resultados:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_carrefour --termo "arroz" --quantidade 10 --gravar
-
-🏷️ Consultar produto pelo EAN
-
-Consulta específica:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_carrefour --ean 7896006716150
-
-Para gravar o resultado:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_carrefour --ean 7896006716150 --gravar
-
-🔄 Atualizar todas as ofertas cadastradas
-
-Simulação:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_carrefour --todos
-
-Gravação:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_carrefour --todos --gravar
-
-🔁 Atualizar as três redes em uma única execução
-
-Simulação:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_todos --cep 14010000
-
-Gravação:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py atualizar_precos_todos --cep 14010000 --gravar
-
-O comando executa Savegnago, Atacadão e Carrefour em sequência e informa eventuais falhas sem interromper as demais redes.
-
-⏰ Atualização automática de preços
-
-As atualizações periódicas dos três supermercados são executadas pelo Agendador de Tarefas do Windows.
-
-Atualmente, as tarefas estão organizadas da seguinte maneira:
-
-Supermercado
-
-Tarefa agendada
-
-Horário aproximado
-
-🟢 Savegnago
-
-Atualizar Preços Savegnago
-
-12:30
-
-🔵 Atacadão
-
-Atualizar Preços Atacadão
-
-12:45
-
-🔴 Carrefour
-
-Atualizar Preços Carrefour
-
-13:00
-
-As tarefas utilizam o interpretador Python do ambiente virtual e executam os respectivos comandos de atualização com a opção --gravar.
-
-⚙️ Configuração das tarefas
-
-Para configurar uma tarefa no Windows, utilize:
-
-Programa: caminho completo para backend\.venv\Scripts\python.exe.
-
-Argumentos: comando Django correspondente, incluindo --gravar.
-
-Iniciar em: caminho completo para a pasta raiz do projeto.
-
-Periodicidade: diária, conforme o horário desejado.
-
-💡 A configuração do Agendador de Tarefas é local do Windows e não é compartilhada automaticamente pelo Git. O computador precisa estar ligado e conectado à internet no horário programado.
-
-🧪 Testes
-
-Para verificar a configuração do Django:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py check
-
-Para executar todos os testes automatizados:
-
-.\backend\.venv\Scripts\python.exe .\backend\manage.py test tests
-
-Os testes verificam o funcionamento das funcionalidades implementadas no backend. A execução dos testes não realiza atualizações reais de preços nos supermercados.
-
-O repositório também possui GitHub Actions para executar automaticamente os testes do backend com PostgreSQL e o build do frontend em Pull Requests e pushes para a main.
-
-🔌 Endpoints principais da API
-
-Método
-
-Endpoint
-
-Descrição
-
-GET
-
-/api/v1/produtos/
-
-Lista e pesquisa produtos
-
-GET
-
-/api/v1/supermercados/
-
-Lista supermercados ativos
-
-GET
-
-/api/v1/produtos/{id}/comparacao/
-
-Compara preços de um produto
-
-GET
-
-/api/v1/produtos/{id}/historico/
-
-Consulta histórico de preços
-
-POST
-
-/api/v1/listas/simular/
-
-Simula uma lista de compras
-
-Para detalhes sobre os formatos das requisições e respostas, consulte a documentação do backend e os arquivos disponíveis em docs/.
-
-🛡️ Boas práticas
-
-Não versione arquivos .env, senhas, tokens ou outras credenciais.
-
-Mantenha as dependências documentadas nos arquivos requirements.txt e package.json.
-
-Execute os testes antes de enviar alterações.
-
-Desenvolva novas funcionalidades em branches específicas.
-
-Execute os comandos de coleta em modo de simulação antes de utilizar --gravar.
-
-Não execute comandos de gravação em um ambiente compartilhado sem entender quais dados serão alterados.
-
-Confira os resultados das atualizações e os registros históricos de preços.
-
-📚 Documentação complementar
-
-Arquivo
-
-Descrição
-
-backend/README.md
-
-Configuração, API e detalhes técnicos do backend
-
-frontend/README.md
-
-Ambiente de desenvolvimento do frontend
-
-docs/README.md
-
-Visão geral e documentação do projeto
-
-<p align="center">
-  <strong>🛒 Comparador de Preços de Supermercados</strong>
-  <br>
-  Projeto Integrador — Engenharia da Computação
-</p>
+Projeto Integrador II — Engenharia de Computação · UNIVESP.
