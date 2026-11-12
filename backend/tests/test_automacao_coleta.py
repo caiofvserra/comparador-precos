@@ -1,8 +1,10 @@
 """Verifica autorização e execução assíncrona do coletor."""
 
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.test import TestCase
+from django.utils import timezone
 from coleta.models import ExecucaoColeta
 
 
@@ -46,6 +48,59 @@ class ColetaAgendadaAPITests(TestCase):
         self.assertEqual(
             ExecucaoColeta.objects.first().estado, ExecucaoColeta.Estados.ERRO
         )
+
+    @patch("coleta.automacao.autenticar_github", return_value=CLAIMS)
+    def test_consulta_detecta_processo_encerrado_por_deploy(self, auth):
+        execucao = ExecucaoColeta.objects.create(
+            origem="schedule",
+            estado=ExecucaoColeta.Estados.EXECUTANDO,
+        )
+        antigo = timezone.now() - timedelta(minutes=5)
+        ExecucaoColeta.objects.filter(pk=execucao.pk).update(
+            iniciada_em=antigo,
+            ultima_atividade_em=antigo,
+        )
+        resposta = self.client.get(f"{URL}{execucao.pk}/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(resposta.json()["estado"], "erro")
+        self.assertIn("interrompida", resposta.json()["erro"])
+        execucao.refresh_from_db()
+        self.assertIsNotNone(execucao.finalizada_em)
+
+    @patch("coleta.automacao.subprocess.Popen")
+    @patch("coleta.automacao.autenticar_github", return_value=CLAIMS)
+    def test_nova_coleta_apos_processo_interrompido(self, auth, processo):
+        anterior = ExecucaoColeta.objects.create(
+            origem="schedule",
+            estado=ExecucaoColeta.Estados.EXECUTANDO,
+        )
+        antigo = timezone.now() - timedelta(minutes=5)
+        ExecucaoColeta.objects.filter(pk=anterior.pk).update(
+            iniciada_em=antigo,
+            ultima_atividade_em=antigo,
+        )
+        resposta = self.client.post(URL)
+        self.assertEqual(resposta.status_code, 202)
+        self.assertNotEqual(resposta.json()["id"], anterior.pk)
+        anterior.refresh_from_db()
+        self.assertEqual(anterior.estado, ExecucaoColeta.Estados.ERRO)
+        processo.assert_called_once()
+
+    @patch("coleta.automacao.subprocess.Popen")
+    @patch("coleta.automacao.autenticar_github", return_value=CLAIMS)
+    def test_pulso_recente_preserva_execucao_ativa(self, auth, processo):
+        execucao = ExecucaoColeta.objects.create(
+            origem="schedule",
+            estado=ExecucaoColeta.Estados.EXECUTANDO,
+            ultima_atividade_em=timezone.now(),
+        )
+        ExecucaoColeta.objects.filter(pk=execucao.pk).update(
+            iniciada_em=timezone.now() - timedelta(minutes=10),
+        )
+        resposta = self.client.post(URL)
+        self.assertEqual(resposta.status_code, 202)
+        self.assertEqual(resposta.json()["id"], execucao.pk)
+        processo.assert_not_called()
 
     @patch("coleta.automacao.jwt.decode")
     @patch("coleta.automacao.JWK_CLIENT.get_signing_key_from_jwt")
