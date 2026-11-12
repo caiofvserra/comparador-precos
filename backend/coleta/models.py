@@ -16,6 +16,8 @@ class ExecucaoColeta(models.Model):
     origem = models.CharField(max_length=32, default="schedule")
     iniciada_em = models.DateTimeField(auto_now_add=True)
     finalizada_em = models.DateTimeField(null=True, blank=True)
+    # Atualizado periodicamente pelo subprocesso para detectar deploys que o encerram.
+    ultima_atividade_em = models.DateTimeField(null=True, blank=True)
     erro = models.TextField(blank=True)
 
     class Meta:

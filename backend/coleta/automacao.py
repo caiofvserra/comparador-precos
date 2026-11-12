@@ -13,7 +13,7 @@ import sys
 import jwt
 from jwt import PyJWKClient
 from django.conf import settings
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -67,6 +67,48 @@ def autenticar_github(request):
     return claims
 
 
+def verificar_execucao_interrompida(execucao):
+    """Marca como erro uma coleta cujo processo parou de enviar sinais de vida.
+
+    O subprocesso pode desaparecer quando o Render faz um novo deploy.
+    A marcação é condicional para não sobrescrever um pulso recente.
+    """
+    if execucao.estado not in (
+        ExecucaoColeta.Estados.PENDENTE,
+        ExecucaoColeta.Estados.EXECUTANDO,
+    ):
+        return execucao
+
+    limite = timezone.now() - timedelta(minutes=3)
+    ultimo_pulso = execucao.ultima_atividade_em or execucao.iniciada_em
+    if ultimo_pulso >= limite:
+        return execucao
+
+    filtro_sem_pulso = (
+        Q(ultima_atividade_em__lt=limite)
+        | Q(ultima_atividade_em__isnull=True, iniciada_em__lt=limite)
+    )
+    alterados = (
+        ExecucaoColeta.objects.filter(pk=execucao.pk, estado=execucao.estado)
+        .filter(filtro_sem_pulso)
+        .update(
+            estado=ExecucaoColeta.Estados.ERRO,
+            erro=(
+                "Coleta interrompida: sem sinal de atividade por mais de "
+                "3 minutos. Verifique se ocorreu um deploy/reinício no Render."
+            ),
+            finalizada_em=timezone.now(),
+        )
+    )
+    if alterados:
+        LOGGER.warning(
+            "[coleta-agendada] Execução %s interrompida (sem pulso).",
+            execucao.pk,
+        )
+    execucao.refresh_from_db()
+    return execucao
+
+
 def resposta_negada():
     resposta = JsonResponse({"erro": "Não autorizado"}, status=403)
     resposta["Cache-Control"] = "no-store"
@@ -80,23 +122,27 @@ def iniciar_coleta(request):
     if not claims:
         return resposta_negada()
 
-    # Impede que uma nova execução simultânea sobreponha a anterior.
-    limite = timezone.now() - timedelta(minutes=90)
-    corrente = ExecucaoColeta.objects.filter(
+    # Reutiliza uma execução realmente ativa; registros órfãos não bloqueiam
+    # as próximas coletas depois de um deploy/reinício do Render.
+    for corrente in ExecucaoColeta.objects.filter(
         estado__in=[
             ExecucaoColeta.Estados.PENDENTE,
             ExecucaoColeta.Estados.EXECUTANDO,
         ],
-        iniciada_em__gte=limite,
-    ).first()
-    if corrente:
-        return JsonResponse(
-            {"id": corrente.pk, "estado": corrente.estado, "em_andamento": True},
-            status=202,
-        )
+    ).order_by("-iniciada_em"):
+        corrente = verificar_execucao_interrompida(corrente)
+        if corrente.estado in (
+            ExecucaoColeta.Estados.PENDENTE,
+            ExecucaoColeta.Estados.EXECUTANDO,
+        ):
+            return JsonResponse(
+                {"id": corrente.pk, "estado": corrente.estado, "em_andamento": True},
+                status=202,
+            )
 
     execucao = ExecucaoColeta.objects.create(
         origem=claims["event_name"],
+        ultima_atividade_em=timezone.now(),
     )
     try:
         subprocess.Popen(
@@ -132,6 +178,7 @@ def situacao_coleta(request, execucao_id):
     execucao = ExecucaoColeta.objects.filter(pk=execucao_id).first()
     if execucao is None:
         return JsonResponse({"erro": "Execução não encontrada"}, status=404)
+    execucao = verificar_execucao_interrompida(execucao)
 
     registros = Preco.objects.filter(
         data_hora_coleta__gte=execucao.iniciada_em,
