@@ -3,7 +3,17 @@
 API REST em Django + Django REST Framework para o MVP do Projeto Integrador II.
 Segue a *Especificação Técnica do MVP v2* (contrato do grupo).
 
-## Como rodar localmente
+## Aplicação publicada e coleta automática
+
+A aplicação está disponível em **[https://comparador-precos-web-9j6z.onrender.com](https://comparador-precos-web-9j6z.onrender.com)**. O backend Django e o frontend Vue são executados juntos no Render, com banco PostgreSQL do ambiente publicado. O serviço é construído pelo `Dockerfile`; **não é necessário executar `manage.py runserver` para usar o site**.
+
+A coleta diária das três redes é acionada pelo workflow `.github/workflows/coleta-diaria.yml` às **06h (horário de Brasília)**, com autenticação OIDC GitHub → Render. O comando é executado no backend publicado e utiliza o banco de produção, sem enviar credenciais PostgreSQL ao Actions. A coleta agendada **atualiza ofertas previamente cadastradas**, não importa automaticamente um catálogo ilimitado.
+
+Para acompanhar a coleta, consulte [GitHub Actions](https://github.com/caiofvserra/comparador-precos/actions) e os logs do serviço no Render. A CI em `.github/workflows/ci.yml` verifica testes, frontend e Docker, e o deploy da `main` depende de verificações aprovadas.
+
+**Atenção:** usar os comandos abaixo em seu computador utiliza o banco definido no `.env` local; **isso não atualiza a base publicada**. Não execute comandos de gravação em ambiente compartilhado sem verificar a conexão.
+
+## Desenvolvimento local (opcional)
 
 Requisitos: Python 3.11+ e PostgreSQL.
 
@@ -32,12 +42,13 @@ Requisitos: Python 3.11+ e PostgreSQL.
    cp .env.example .env           # Windows: copy .env.example .env
    ```
 
-4. Crie as tabelas e carregue os dados de exemplo:
+4. Crie as tabelas do ambiente local:
 
    ```bash
    python manage.py migrate
-   python manage.py loaddata dados_exemplo
    ```
+
+   **Apenas para experimentos com dados ilustrativos no banco local**, pode-se carregar a fixture `python manage.py loaddata dados_exemplo`. Ela não deve substituir a coleta real nem ser carregada no banco de produção.
 
 5. (Opcional) crie um usuário para o Django Admin em `http://localhost:8000/admin/`:
 
@@ -145,8 +156,8 @@ python manage.py atualizar_precos_todos --cep 14010000
 python manage.py atualizar_precos_todos --cep 14010000 --gravar
 ```
 
-Também permanecem disponíveis os comandos individuais de Savegnago, Atacadão e Carrefour. O histórico de preços não é sobrescrito: um novo registro é criado apenas quando o valor muda.
+Também permanecem disponíveis os comandos individuais de Savegnago, Atacadão e Carrefour, além de comandos específicos de importação e conciliação. A rotina agendada atualiza apenas ofertas já existentes. As alterações de valor geram registros históricos; observações de valores inalterados podem ser registradas uma vez ao dia após consulta real. A gravação local não altera o banco de produção.
 
 ## Integração contínua
 
-O workflow `.github/workflows/ci.yml` executa automaticamente os testes do backend com PostgreSQL e o build do frontend em Pull Requests e pushes para a `main`.
+O workflow `.github/workflows/ci.yml` executa automaticamente os testes do backend com PostgreSQL, o build do frontend e o build Docker em Pull Requests e pushes para a `main`. Consulte o [README principal](../README.md) para fluxo de deploy e diferenças entre produção e desenvolvimento.
