@@ -1,161 +1,47 @@
-# Comparador de Preços de Supermercados
+# Documentação — Comparador de Preços de Supermercados
 
-Aplicação web para comparação de preços de produtos entre supermercados.
+Sistema web do Projeto Integrador II, disponível em **[comparador-precos-web-9j6z](https://comparador-precos-web-9j6z.onrender.com)**, com interface responsiva, API Django e PostgreSQL no Render.
 
-O sistema permite pesquisar produtos, comparar preços, consultar o histórico de preços e simular uma lista de compras com o valor estimado em cada supermercado.
+## Visão geral da arquitetura
 
-## Tecnologias
+- **Frontend:** Vue 3, TypeScript e Vite, compilado e servido pelo backend no mesmo domínio.
+- **Backend:** Python 3.11, Django e Django REST Framework, que disponibiliza a API e as rotinas de integração.
+- **Persistência:** PostgreSQL do serviço publicado, separado de qualquer banco de desenvolvimento.
+- **Implantação:** Dockerfile e `render.yaml`, usando a `main` como branch de publicação.
+- **Automação:** CI em `.github/workflows/ci.yml`; coleta diária em `.github/workflows/coleta-diaria.yml`.
 
-### Backend
+O acesso ao sistema publicado **não** exige instalação local. As instruções de `manage.py runserver` e `npm run dev` são apenas para desenvolver e testar em um ambiente próprio.
 
-- Python
-- Django
-- Django REST Framework
-- PostgreSQL
+## Fontes e atualização dos preços
 
-### Frontend
+As integrações consultam **Savegnago, Atacadão e Carrefour**. O GitHub Actions agenda a atualização diária às **06h no horário de Brasília (UTC−3)**, autenticando-se com OIDC perante a aplicação no Render. A execução dos coletores ocorre no backend publicado, que já tem conexão com o PostgreSQL de produção.
 
-- Vue 3
-- TypeScript
-- Vite
+- A **rotina diária** atualiza preços de **ofertas previamente cadastradas**; não é uma descoberta automática ilimitada de novos produtos.
+- Importação, conciliação e busca de produtos equivalentes por EAN são tarefas específicas, distintas do agendamento diário.
+- O sistema não deve fabricar valores: mudanças ou observações diárias de preços dependem de consulta às fontes.
+- Um comando executado no computador local atua no banco configurado **nesse ambiente**, não no Render.
 
-## Funcionalidades
+O modo `CATALOGO_MODO=triangulacao` prioriza produtos com preços nas três redes na apresentação do site; não restringe o catálogo completo retornado pela API `/api/v1/produtos/`.
 
-- Busca de produtos por nome ou marca
-- Comparação de preços entre supermercados
-- Histórico de preços
-- Lista de compras
-- Simulação do total por supermercado
-- Identificação de itens indisponíveis
-- Filtros de produtos
-- Exibição de imagens dos produtos
+## Funcionalidades entregues
 
-## Estrutura
+Pesquisa e listagem de produtos; comparação entre supermercados, com indicação de indisponibilidade; histórico de preços; simulação de lista de compras e total por mercado; imagens e links de ofertas; adaptação da interface a celular e computador.
 
-```text
-comparador-precos/
-├── backend/
-│   ├── catalogo/
-│   ├── coleta/
-│   ├── config/
-│   ├── precos/
-│   ├── simulacao/
-│   ├── tests/
-│   ├── manage.py
-│   └── requirements.txt
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── assets/
-│   │   ├── components/
-│   │   ├── composables/
-│   │   ├── layouts/
-│   │   ├── router/
-│   │   ├── services/
-│   │   └── views/
-│   └── package.json
-├── docs/
-└── README.md
-```
+## Principais endpoints
 
-## Backend
+| Método | Endpoint | Finalidade |
+| --- | --- | --- |
+| GET | `/api/v1/produtos/` | Busca e catálogo de produtos |
+| GET | `/api/v1/supermercados/` | Supermercados ativos |
+| GET | `/api/v1/produtos/{id}/comparacao/` | Preços de um produto por rede |
+| GET | `/api/v1/produtos/{id}/historico/` | Histórico e filtro opcional por mercado |
+| POST | `/api/v1/listas/simular/` | Simulação de lista e totais |
+| GET | `/api/v1/configuracao/` | Configuração do modo de catálogo |
 
-Entre na pasta do backend:
+## Publicação, testes e manutenção
 
-```bash
-cd backend
-```
+Os commits chegam à `main` por Pull Request. A CI verifica Django/PostgreSQL, build Vue e Docker. O Render está configurado para implantar a `main` após a aprovação das verificações (`checksPass`). Uma alteração aprovada no GitHub pode não estar publicada ainda; confira o commit em [Render → Deploys](https://dashboard.render.com/web/srv-dbnfnfbrjlhs738meva0).
 
-Crie e ative o ambiente virtual:
+A atualização de preços pode ser consultada ou iniciada manualmente na aba [GitHub Actions](https://github.com/caiofvserra/comparador-precos/actions).
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-Instale as dependências:
-
-```bash
-pip install -r requirements.txt
-```
-
-Crie o arquivo de configuração:
-
-```bash
-cp .env.example .env
-```
-
-Execute as migrations:
-
-```bash
-python manage.py migrate
-```
-
-Para carregar os dados de exemplo:
-
-```bash
-python manage.py loaddata dados_exemplo
-```
-
-Inicie o servidor:
-
-```bash
-python manage.py runserver
-```
-
-A API ficará disponível em:
-
-```text
-http://localhost:8000/api/v1/
-```
-
-## Frontend
-
-Entre na pasta do frontend:
-
-```bash
-cd frontend
-```
-
-Instale as dependências:
-
-```bash
-npm install
-```
-
-Crie o arquivo de configuração:
-
-```bash
-cp .env.example .env
-```
-
-Configure a URL da API no arquivo `.env`:
-
-```env
-VITE_API_URL=http://localhost:8000
-```
-
-Inicie o frontend:
-
-```bash
-npm run dev
-```
-
-## Endpoints principais
-
-| Método | Endpoint | Descrição |
-|---|---|---|
-| GET | `/api/v1/produtos/` | Lista e busca produtos |
-| GET | `/api/v1/supermercados/` | Lista supermercados ativos |
-| GET | `/api/v1/produtos/{id}/comparacao/` | Compara preços do produto |
-| GET | `/api/v1/produtos/{id}/historico/` | Consulta o histórico de preços |
-| POST | `/api/v1/listas/simular/` | Simula o valor da lista de compras |
-
-## Testes
-
-No diretório `backend`:
-
-```bash
-python manage.py check
-python manage.py test
-```
+**Documentação de referência:** [README principal](../README.md) · [Backend](../backend/README.md) · [Frontend](../frontend/README.md). Estes dois últimos incluem instruções **opcionais** de execução local para desenvolvedores.
