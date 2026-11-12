@@ -64,37 +64,49 @@ def iniciar():
 
 
 def executar():
-    resposta = iniciar()
-    execucao_id = resposta["id"]
-    print(f"Coleta solicitada no Render. Execução nº {execucao_id}.", flush=True)
-    url = BASE_URL + f"/api/v1/interno/coleta/{execucao_id}/"
+    # Um deploy pode interromper o subprocesso remoto. Nesse caso, após
+    # o watchdog marcar a execução como erro, reinicia uma única vez.
+    for reinicio in range(2):
+        resposta = iniciar()
+        execucao_id = resposta["id"]
+        print(f"Coleta solicitada no Render. Execução nº {execucao_id}.", flush=True)
+        url = BASE_URL + f"/api/v1/interno/coleta/{execucao_id}/"
 
-    for tentativa in range(1, 151):
-        time.sleep(15)
-        try:
-            resultado = requisicao(url)
-        except (HTTPError, URLError) as erro:
-            if isinstance(erro, HTTPError) and erro.code in (401, 403):
-                raise
-            print(f"Consulta de andamento indisponível: {erro}.", flush=True)
-            continue
+        for tentativa in range(1, 151):
+            time.sleep(15)
+            try:
+                resultado = requisicao(url)
+            except (HTTPError, URLError) as erro:
+                if isinstance(erro, HTTPError) and erro.code in (401, 403):
+                    raise
+                print(f"Consulta de andamento indisponível: {erro}.", flush=True)
+                continue
 
-        estado = resultado.get("estado")
-        if estado == "concluida":
-            print("Atualização confirmada no PostgreSQL:", flush=True)
-            print(json.dumps(resultado, ensure_ascii=False, indent=2), flush=True)
-            return
-        if estado == "erro":
-            raise RuntimeError(
-                "A coleta falhou no Render: " + str(resultado.get("erro", ""))[:400]
-            )
-        if tentativa % 4 == 0:
-            print(
-                f"Coleta em execução: {estado}, "
-                f"{resultado.get('novos_registros', 0)} registros até agora.",
-                flush=True,
-            )
-    raise RuntimeError("Tempo limite ao aguardar conclusão no Render.")
+            estado = resultado.get("estado")
+            if estado == "concluida":
+                print("Atualização confirmada no PostgreSQL:", flush=True)
+                print(json.dumps(resultado, ensure_ascii=False, indent=2), flush=True)
+                return
+            if estado == "erro":
+                detalhe = str(resultado.get("erro", ""))
+                if "Coleta interrompida" in detalhe and reinicio == 0:
+                    print(
+                        "Processo remoto interrompido (possível deploy). "
+                        "Iniciando mais uma tentativa segura.",
+                        flush=True,
+                    )
+                    break
+                raise RuntimeError("A coleta falhou no Render: " + detalhe[:400])
+            if tentativa % 4 == 0:
+                print(
+                    f"Coleta em execução: {estado}, "
+                    f"{resultado.get('novos_registros', 0)} registros até agora.",
+                    flush=True,
+                )
+        else:
+            raise RuntimeError("Tempo limite ao aguardar conclusão no Render.")
+
+    raise RuntimeError("A coleta foi interrompida novamente após a tentativa de recuperação.")
 
 
 if __name__ == "__main__":
